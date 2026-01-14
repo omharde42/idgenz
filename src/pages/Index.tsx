@@ -109,14 +109,52 @@ const Index = () => {
             <div className="bg-card rounded-xl border border-border shadow-sm">
               <ScrollArea className="h-[calc(100vh-180px)]">
                 <div className="p-5 space-y-6">
-                  {/* Category Selection */}
+                  {/* Step 1: Category Selection */}
                   <CategorySelector selected={config.category} onChange={handleCategoryChange} />
 
-                  {/* AI Features */}
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
-                      ✨ AI Features
-                    </h3>
+                  <Separator />
+
+                  {/* Step 2: Image Uploads */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">2</span>
+                      Upload Images
+                    </label>
+                    <ImageUploads config={config} onChange={handleConfigUpdate} />
+                  </div>
+
+                  <Separator />
+
+                  {/* Step 3: Fields Manager */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">3</span>
+                      Details & Fields
+                    </label>
+                    <FieldsManager fields={config.fields} onChange={fields => handleConfigUpdate({
+                    fields
+                  })} />
+                  </div>
+
+                  <Separator />
+
+                  {/* Step 4: Design Controls */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">4</span>
+                      Design & Layout
+                    </label>
+                    <DesignControls config={config} onChange={handleConfigUpdate} />
+                  </div>
+
+                  <Separator />
+
+                  {/* Step 5: AI Features */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-xs font-bold">✨</span>
+                      AI Features
+                    </label>
                     <div className="grid gap-2">
                       <ExtractDataFromPhoto category={config.category} onDataExtracted={handleDataExtracted} currentFields={config.fields} />
                       <DesignSuggestions category={config.category} institutionName={config.institutionName} currentColors={{
@@ -125,23 +163,6 @@ const Index = () => {
                     }} onApplySuggestions={handleConfigUpdate} />
                     </div>
                   </div>
-
-                  <Separator />
-
-                  {/* Image Uploads */}
-                  <ImageUploads config={config} onChange={handleConfigUpdate} />
-
-                  <Separator />
-
-                  {/* Fields Manager */}
-                  <FieldsManager fields={config.fields} onChange={fields => handleConfigUpdate({
-                  fields
-                })} />
-
-                  <Separator />
-
-                  {/* Design Controls */}
-                  <DesignControls config={config} onChange={handleConfigUpdate} />
                 </div>
               </ScrollArea>
             </div>
