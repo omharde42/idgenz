@@ -149,7 +149,7 @@ const Index = () => {
 
           {/* Right Panel - Preview */}
           <div className="flex-1 flex flex-col">
-            <div className="bg-muted/50 rounded-xl border border-border p-6 flex-1 flex flex-col items-center justify-center min-h-[600px]">
+            <div className="bg-secondary/30 rounded-xl border border-border p-6 flex-1 flex flex-col items-center justify-center min-h-[600px]">
               <p className="text-sm text-muted-foreground mb-6">Live Preview</p>
               
               {/* ID Card Preview */}
