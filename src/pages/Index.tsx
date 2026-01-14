@@ -19,6 +19,7 @@ const getInitialConfig = (category: CategoryType): IDCardConfig => ({
   institutionAddress: '',
   layout: 'vertical',
   cardShape: 'rounded',
+  cardSize: 'cr80',
   headerColor: '#2563eb',
   footerColor: '#1e40af',
   photoSize: 90,

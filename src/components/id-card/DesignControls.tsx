@@ -1,11 +1,12 @@
 import React from 'react';
-import { IDCardConfig } from '@/types/idCard';
+import { IDCardConfig, CardSizeType, cardSizeOptions } from '@/types/idCard';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
-import { RectangleHorizontal, RectangleVertical, Square, CircleDot } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RectangleHorizontal, RectangleVertical, Square, CircleDot, Ruler } from 'lucide-react';
 
 interface DesignControlsProps {
   config: IDCardConfig;
@@ -61,6 +62,31 @@ const DesignControls: React.FC<DesignControlsProps> = ({ config, onChange }) => 
             </Label>
           </div>
         </RadioGroup>
+      </div>
+
+      {/* Card Size */}
+      <div className="space-y-2">
+        <Label className="text-xs text-muted-foreground flex items-center gap-1">
+          <Ruler className="w-3 h-3" /> Card Size
+        </Label>
+        <Select
+          value={config.cardSize}
+          onValueChange={(value) => onChange({ cardSize: value as CardSizeType })}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select card size" />
+          </SelectTrigger>
+          <SelectContent className="bg-popover z-50">
+            {cardSizeOptions.map((size) => (
+              <SelectItem key={size.id} value={size.id}>
+                <div className="flex flex-col">
+                  <span className="font-medium">{size.label}</span>
+                  <span className="text-xs text-muted-foreground">{size.description}</span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Colors */}

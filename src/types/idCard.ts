@@ -1,5 +1,38 @@
 export type CategoryType = 'school' | 'college' | 'corporate' | 'event' | 'custom';
 
+export type CardSizeType = 
+  | 'cr80' 
+  | 'cr79' 
+  | 'cr100' 
+  | 'iso-a8' 
+  | 'iso-b8' 
+  | 'half-credit' 
+  | 'military' 
+  | 'key-tag' 
+  | 'oversized' 
+  | 'custom-square';
+
+export interface CardSizeOption {
+  id: CardSizeType;
+  label: string;
+  width: number;
+  height: number;
+  description: string;
+}
+
+export const cardSizeOptions: CardSizeOption[] = [
+  { id: 'cr80', label: 'CR80 (Standard)', width: 324, height: 204, description: '3.375" × 2.125" - Credit Card Size' },
+  { id: 'cr79', label: 'CR79', width: 316, height: 200, description: '3.303" × 2.051" - Slightly Smaller' },
+  { id: 'cr100', label: 'CR100', width: 372, height: 252, description: '3.88" × 2.63" - Large Format' },
+  { id: 'iso-a8', label: 'ISO A8', width: 396, height: 280, description: '52mm × 74mm - International Standard' },
+  { id: 'iso-b8', label: 'ISO B8', width: 468, height: 330, description: '62mm × 88mm - International B8' },
+  { id: 'half-credit', label: 'Half Credit Card', width: 162, height: 204, description: '1.69" × 2.125" - Compact' },
+  { id: 'military', label: 'Military CAC', width: 324, height: 204, description: '3.375" × 2.125" - US Military Standard' },
+  { id: 'key-tag', label: 'Key Tag', width: 252, height: 108, description: '2.63" × 1.125" - Keychain Size' },
+  { id: 'oversized', label: 'Oversized', width: 432, height: 288, description: '4.5" × 3" - Large Badge' },
+  { id: 'custom-square', label: 'Square Badge', width: 288, height: 288, description: '3" × 3" - Square Format' },
+];
+
 export interface IDCardField {
   key: string;
   label: string;
@@ -13,6 +46,7 @@ export interface IDCardConfig {
   institutionAddress: string;
   layout: 'vertical' | 'horizontal';
   cardShape: 'rounded' | 'rectangular';
+  cardSize: CardSizeType;
   headerColor: string;
   footerColor: string;
   photoSize: number;

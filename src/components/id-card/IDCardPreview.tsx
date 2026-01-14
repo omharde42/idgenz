@@ -1,7 +1,7 @@
 import React, { forwardRef } from 'react';
 import { User } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { IDCardConfig } from '@/types/idCard';
+import { IDCardConfig, cardSizeOptions } from '@/types/idCard';
 
 interface IDCardPreviewProps {
   config: IDCardConfig;
@@ -12,6 +12,11 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
     const isVertical = config.layout === 'vertical';
     const enabledFields = config.fields.filter((f) => f.enabled);
     
+    // Get card dimensions based on selected size
+    const selectedSize = cardSizeOptions.find(s => s.id === config.cardSize) || cardSizeOptions[0];
+    const cardWidth = isVertical ? selectedSize.height : selectedSize.width;
+    const cardHeight = isVertical ? selectedSize.width : selectedSize.height;
+    
     // Generate unique ID for QR code
     const qrData = JSON.stringify({
       name: config.fields.find(f => f.key === 'name')?.value || '',
@@ -20,7 +25,6 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
     });
 
     const cardClasses = `
-      ${isVertical ? 'w-[320px] h-[480px]' : 'w-[480px] h-[320px]'}
       ${config.cardShape === 'rounded' ? 'rounded-xl' : 'rounded-none'}
       bg-card shadow-xl overflow-hidden relative flex
       ${isVertical ? 'flex-col' : 'flex-row'}
@@ -31,6 +35,8 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
         ref={ref}
         className={cardClasses}
         style={{
+          width: `${cardWidth}px`,
+          height: `${cardHeight}px`,
           backgroundImage: config.backgroundImage ? `url(${config.backgroundImage})` : undefined,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
