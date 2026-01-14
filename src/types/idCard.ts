@@ -10,7 +10,9 @@ export type CardSizeType =
   | 'military' 
   | 'key-tag' 
   | 'oversized' 
-  | 'custom-square';
+  | 'custom-square'
+  | 'school-student'
+  | 'school-teacher';
 
 export interface CardSizeOption {
   id: CardSizeType;
@@ -21,6 +23,8 @@ export interface CardSizeOption {
 }
 
 export const cardSizeOptions: CardSizeOption[] = [
+  { id: 'school-student', label: 'School Student', width: 306, height: 192, description: '3.2" × 2" - Student ID Card' },
+  { id: 'school-teacher', label: 'School Teacher', width: 324, height: 204, description: '3.375" × 2.125" - Teacher/Staff ID' },
   { id: 'cr80', label: 'CR80 (Standard)', width: 324, height: 204, description: '3.375" × 2.125" - Credit Card Size' },
   { id: 'cr79', label: 'CR79', width: 316, height: 200, description: '3.303" × 2.051" - Slightly Smaller' },
   { id: 'cr100', label: 'CR100', width: 372, height: 252, description: '3.88" × 2.63" - Large Format' },
