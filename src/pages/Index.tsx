@@ -2,13 +2,15 @@ import React, { useState, useRef, useCallback } from 'react';
 import { toPng } from 'html-to-image';
 import { toast } from 'sonner';
 import { CreditCard } from 'lucide-react';
-import { IDCardConfig, CategoryType, getDefaultFields, signatoryTitles } from '@/types/idCard';
+import { IDCardConfig, CategoryType, getDefaultFields, signatoryTitles, IDCardField } from '@/types/idCard';
 import CategorySelector from '@/components/id-card/CategorySelector';
 import FieldsManager from '@/components/id-card/FieldsManager';
 import DesignControls from '@/components/id-card/DesignControls';
 import ImageUploads from '@/components/id-card/ImageUploads';
 import IDCardPreview from '@/components/id-card/IDCardPreview';
 import ActionButtons from '@/components/id-card/ActionButtons';
+import DesignSuggestions from '@/components/id-card/DesignSuggestions';
+import ExtractDataFromPhoto from '@/components/id-card/ExtractDataFromPhoto';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 
@@ -46,6 +48,10 @@ const Index = () => {
 
   const handleConfigUpdate = useCallback((updates: Partial<IDCardConfig>) => {
     setConfig((prev) => ({ ...prev, ...updates }));
+  }, []);
+
+  const handleDataExtracted = useCallback((updates: Partial<IDCardConfig>, fields: IDCardField[]) => {
+    setConfig((prev) => ({ ...prev, ...updates, fields }));
   }, []);
 
   const handleDownload = useCallback(async () => {
@@ -114,6 +120,29 @@ const Index = () => {
                     selected={config.category}
                     onChange={handleCategoryChange}
                   />
+
+                  {/* AI Features */}
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
+                      ✨ AI Features
+                    </h3>
+                    <div className="grid gap-2">
+                      <ExtractDataFromPhoto
+                        category={config.category}
+                        onDataExtracted={handleDataExtracted}
+                        currentFields={config.fields}
+                      />
+                      <DesignSuggestions
+                        category={config.category}
+                        institutionName={config.institutionName}
+                        currentColors={{
+                          headerColor: config.headerColor,
+                          footerColor: config.footerColor,
+                        }}
+                        onApplySuggestions={handleConfigUpdate}
+                      />
+                    </div>
+                  </div>
 
                   <Separator />
 

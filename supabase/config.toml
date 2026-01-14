@@ -1,1 +1,10 @@
 project_id = "ofvehhsuuzvbgbrgoafk"
+
+[functions.enhance-photo]
+verify_jwt = false
+
+[functions.extract-id-data]
+verify_jwt = false
+
+[functions.design-suggestions]
+verify_jwt = false
