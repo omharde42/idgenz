@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { IDCardConfig } from '@/types/idCard';
+import PhotoEnhancer from './PhotoEnhancer';
 
 interface ImageUploadsProps {
   config: IDCardConfig;
@@ -140,6 +141,14 @@ const ImageUploads: React.FC<ImageUploadsProps> = ({ config, onChange }) => {
           </div>
         ))}
       </div>
+
+      {/* AI Photo Enhancer */}
+      {config.profilePhoto && (
+        <PhotoEnhancer
+          photoUrl={config.profilePhoto}
+          onEnhancedPhoto={(enhancedUrl) => onChange({ profilePhoto: enhancedUrl })}
+        />
+      )}
     </div>
   );
 };
