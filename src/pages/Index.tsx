@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { toPng } from 'html-to-image';
 import { toast } from 'sonner';
 import { CreditCard } from 'lucide-react';
-import { IDCardConfig, CategoryType, getDefaultFields, signatoryTitles, IDCardField } from '@/types/idCard';
+import { IDCardConfig, CategoryType, getDefaultFields, signatoryTitles, IDCardField, defaultCardSizes } from '@/types/idCard';
 import CategorySelector from '@/components/id-card/CategorySelector';
 import FieldsManager from '@/components/id-card/FieldsManager';
 import DesignControls from '@/components/id-card/DesignControls';
@@ -40,7 +40,8 @@ const Index = () => {
       ...prev,
       category,
       fields: getDefaultFields(category),
-      signatoryTitle: signatoryTitles[category]
+      signatoryTitle: signatoryTitles[category],
+      cardSize: defaultCardSizes[category]
     }));
   }, []);
   const handleConfigUpdate = useCallback((updates: Partial<IDCardConfig>) => {

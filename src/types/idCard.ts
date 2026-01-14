@@ -134,8 +134,16 @@ export const getDefaultFields = (category: CategoryType): IDCardField[] => {
 
 export const signatoryTitles: Record<CategoryType, string> = {
   school: 'Principal',
-  college: 'Dean',
-  corporate: 'HR Manager',
-  event: 'Organizer',
-  custom: 'Authorized Signatory',
+  college: 'Director',
+  corporate: 'Director',
+  event: 'Director',
+  custom: 'Director',
+};
+
+export const defaultCardSizes: Record<CategoryType, CardSizeType> = {
+  school: 'school-student',
+  college: 'cr80',
+  corporate: 'cr80',
+  event: 'cr80',
+  custom: 'cr80',
 };
