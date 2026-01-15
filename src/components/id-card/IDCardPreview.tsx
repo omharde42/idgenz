@@ -93,13 +93,13 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
         </div>
 
         {/* Body */}
-        <div className={`flex-1 p-3 flex flex-col ${isVertical ? 'items-center' : 'justify-between'} bg-card/95 overflow-hidden`}>
+        <div className={`flex-1 p-2 flex flex-col ${isVertical ? 'items-center' : 'justify-between'} bg-card/95 min-h-0`}>
           {isVertical && (
             <>
               {/* Photo */}
               <div
-                className="rounded-full overflow-hidden border-4 border-primary/30 mb-2 flex-shrink-0"
-                style={{ width: config.photoSize, height: config.photoSize }}
+                className="rounded-full overflow-hidden border-3 border-primary/30 mb-1 flex-shrink-0"
+                style={{ width: Math.min(config.photoSize, 60), height: Math.min(config.photoSize, 60) }}
               >
                 {config.profilePhoto ? (
                   <img
@@ -113,47 +113,47 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
                   </div>
                 )}
               </div>
-              <h2 className="text-base font-bold text-primary text-center flex-shrink-0">
+              <h2 className="text-sm font-bold text-primary text-center flex-shrink-0 leading-tight">
                 {config.fields.find((f) => f.key === 'name')?.value || 'Full Name'}
               </h2>
             </>
           )}
 
           {/* Fields */}
-          <div className={`w-full ${isVertical ? 'mt-2' : ''} text-[10px] space-y-0.5 flex-shrink-0`}>
+          <div className={`w-full ${isVertical ? 'mt-1' : ''} text-[9px] space-y-0 flex-shrink-0`}>
             {enabledFields
               .filter((f) => f.key !== 'name')
-              .slice(0, isVertical ? 5 : 4)
+              .slice(0, isVertical ? 4 : 4)
               .map((field) => (
                 <div
                   key={field.key}
-                  className="flex justify-between border-b border-border pb-0.5"
+                  className="flex justify-between border-b border-border/50 py-0.5"
                 >
-                  <span className="font-semibold text-muted-foreground">{field.label}:</span>
+                  <span className="font-medium text-muted-foreground">{field.label}:</span>
                   <span className="text-foreground">{field.value || '--'}</span>
                 </div>
               ))}
           </div>
 
           {/* Footer with QR and Signature */}
-          <div className={`mt-auto pt-2 flex ${isVertical ? 'justify-between w-full items-end' : 'flex-col items-center gap-1'} flex-shrink-0`}>
+          <div className={`mt-auto pt-1 flex ${isVertical ? 'justify-between w-full items-end gap-2' : 'flex-col items-center gap-1'} flex-shrink-0`}>
             {config.showQRCode && (
-              <div className="bg-white p-1 rounded shadow-sm">
-                <QRCodeSVG value={qrData} size={isVertical ? 40 : 35} />
+              <div className="bg-white p-0.5 rounded shadow-sm flex-shrink-0">
+                <QRCodeSVG value={qrData} size={32} />
               </div>
             )}
             
-            <div className="text-center">
+            <div className="text-center flex-shrink-0">
               {config.authorizedSignature ? (
                 <img
                   src={config.authorizedSignature}
                   alt="Signature"
-                  className="h-6 object-contain mx-auto"
+                  className="h-5 object-contain mx-auto"
                 />
               ) : (
-                <div className="w-16 border-t-2 border-foreground/60" />
+                <div className="w-14 border-t-2 border-foreground/60" />
               )}
-              <p className="text-[9px] text-muted-foreground mt-0.5 font-medium">{config.signatoryTitle}</p>
+              <p className="text-[8px] text-muted-foreground leading-tight font-medium">{config.signatoryTitle}</p>
             </div>
           </div>
         </div>
