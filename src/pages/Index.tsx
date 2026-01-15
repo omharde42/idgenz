@@ -27,6 +27,7 @@ const getInitialConfig = (category: CategoryType): IDCardConfig => ({
   cardSize: 'cr80',
   headerColor: '#2563eb',
   footerColor: '#1e40af',
+  textColor: '#000000',
   photoSize: 90,
   fields: getDefaultFields(category),
   profilePhoto: null,

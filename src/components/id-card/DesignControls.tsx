@@ -1,12 +1,13 @@
 import React from 'react';
-import { IDCardConfig, CardSizeType, cardSizeOptions } from '@/types/idCard';
+import { IDCardConfig, CardSizeType, cardSizeOptions, textColorOptions } from '@/types/idCard';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RectangleHorizontal, RectangleVertical, Square, CircleDot, Ruler } from 'lucide-react';
+import { RectangleHorizontal, RectangleVertical, Square, CircleDot, Ruler, Type, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface DesignControlsProps {
   config: IDCardConfig;
@@ -128,6 +129,39 @@ const DesignControls: React.FC<DesignControlsProps> = ({ config, onChange }) => 
               className="flex-1"
             />
           </div>
+        </div>
+      </div>
+
+      {/* Text Color */}
+      <div className="space-y-2">
+        <Label className="text-xs text-muted-foreground flex items-center gap-1">
+          <Type className="w-3 h-3" /> Text Color
+        </Label>
+        <div className="grid grid-cols-7 gap-1.5">
+          {textColorOptions.map((option) => (
+            <button
+              key={option.color}
+              type="button"
+              onClick={() => onChange({ textColor: option.color })}
+              className={cn(
+                "w-7 h-7 rounded-md border-2 transition-all hover:scale-110 flex items-center justify-center",
+                config.textColor === option.color 
+                  ? "border-primary ring-2 ring-primary/30" 
+                  : "border-border hover:border-primary/50"
+              )}
+              style={{ backgroundColor: option.color }}
+              title={option.name}
+            >
+              {config.textColor === option.color && (
+                <Check className={cn(
+                  "w-4 h-4",
+                  option.color === '#ffffff' || option.color === '#ca8a04' || option.color === '#d97706' 
+                    ? "text-foreground" 
+                    : "text-white"
+                )} />
+              )}
+            </button>
+          ))}
         </div>
       </div>
 

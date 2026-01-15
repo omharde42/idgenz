@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react';
-import { User } from 'lucide-react';
+import { User, CheckCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { IDCardConfig, cardSizeOptions } from '@/types/idCard';
 
@@ -17,11 +17,18 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
     const cardWidth = isVertical ? selectedSize.height : selectedSize.width;
     const cardHeight = isVertical ? selectedSize.width : selectedSize.height;
     
-    // Generate unique ID for QR code
+    // Generate comprehensive QR code data with all user details
     const qrData = JSON.stringify({
-      name: config.fields.find(f => f.key === 'name')?.value || '',
-      id: config.fields.find(f => f.key === 'rollNo' || f.key === 'employeeId' || f.key === 'enrollmentNo' || f.key === 'participantId' || f.key === 'idNumber')?.value || '',
-      institution: config.institutionName,
+      institution: config.institutionName || 'Institution',
+      address: config.institutionAddress || '',
+      category: config.category,
+      ...enabledFields.reduce((acc, field) => {
+        if (field.value) {
+          acc[field.key] = field.value;
+        }
+        return acc;
+      }, {} as Record<string, string>),
+      issuedBy: config.signatoryTitle,
     });
 
     const cardClasses = `
@@ -29,6 +36,8 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
       bg-card shadow-xl overflow-hidden relative flex
       ${isVertical ? 'flex-col' : 'flex-row'}
     `;
+
+    const textStyle = { color: config.textColor || '#000000' };
 
     return (
       <div
@@ -70,15 +79,20 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
             <>
               {/* Photo for horizontal layout */}
               <div
-                className="rounded-full overflow-hidden border-4 border-primary-foreground/30 mt-4"
+                className="rounded-full overflow-hidden border-4 border-primary-foreground/30 mt-4 relative"
                 style={{ width: config.photoSize, height: config.photoSize }}
               >
                 {config.profilePhoto ? (
-                  <img
-                    src={config.profilePhoto}
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
+                  <>
+                    <img
+                      src={config.profilePhoto}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-0.5">
+                      <CheckCircle className="w-3 h-3 text-white" />
+                    </div>
+                  </>
                 ) : (
                   <div className="w-full h-full bg-muted flex items-center justify-center">
                     <User className="w-1/2 h-1/2 text-muted-foreground" />
@@ -96,9 +110,17 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
         <div className={`flex-1 p-2 flex flex-col ${isVertical ? 'items-center' : 'justify-between'} bg-card/95 min-h-0`}>
           {isVertical && (
             <>
+              {/* Photo Attached Indicator */}
+              {config.profilePhoto && (
+                <div className="flex items-center gap-1 text-[8px] text-green-600 mb-0.5 flex-shrink-0">
+                  <CheckCircle className="w-3 h-3" />
+                  <span>Photo Attached</span>
+                </div>
+              )}
+              
               {/* Photo */}
               <div
-                className="rounded-full overflow-hidden border-3 border-primary/30 mb-1 flex-shrink-0"
+                className="rounded-full overflow-hidden border-3 border-primary/30 mb-1 flex-shrink-0 relative"
                 style={{ width: Math.min(config.photoSize, 60), height: Math.min(config.photoSize, 60) }}
               >
                 {config.profilePhoto ? (
@@ -113,7 +135,10 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
                   </div>
                 )}
               </div>
-              <h2 className="text-sm font-bold text-primary text-center flex-shrink-0 leading-tight">
+              <h2 
+                className="text-sm font-bold text-center flex-shrink-0 leading-tight"
+                style={textStyle}
+              >
                 {config.fields.find((f) => f.key === 'name')?.value || 'Full Name'}
               </h2>
             </>
@@ -129,8 +154,10 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
                   key={field.key}
                   className="flex justify-between border-b border-border/50 py-0.5"
                 >
-                  <span className="font-medium text-muted-foreground">{field.label}:</span>
-                  <span className="text-foreground">{field.value || '--'}</span>
+                  <span className="font-medium" style={{ color: config.textColor ? `${config.textColor}99` : undefined }}>
+                    {field.label}:
+                  </span>
+                  <span style={textStyle}>{field.value || '--'}</span>
                 </div>
               ))}
           </div>
@@ -153,7 +180,9 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
               ) : (
                 <div className="w-14 border-t-2 border-foreground/60" />
               )}
-              <p className="text-[8px] text-muted-foreground leading-tight font-medium">{config.signatoryTitle}</p>
+              <p className="text-[8px] leading-tight font-medium" style={{ color: config.textColor ? `${config.textColor}99` : undefined }}>
+                {config.signatoryTitle}
+              </p>
             </div>
           </div>
         </div>
