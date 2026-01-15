@@ -93,12 +93,12 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
         </div>
 
         {/* Body */}
-        <div className={`flex-1 p-4 flex flex-col ${isVertical ? 'items-center' : 'justify-between'} bg-card/95`}>
+        <div className={`flex-1 p-3 flex flex-col ${isVertical ? 'items-center' : 'justify-between'} bg-card/95 overflow-hidden`}>
           {isVertical && (
             <>
               {/* Photo */}
               <div
-                className="rounded-full overflow-hidden border-4 border-primary/30 mb-3"
+                className="rounded-full overflow-hidden border-4 border-primary/30 mb-2 flex-shrink-0"
                 style={{ width: config.photoSize, height: config.photoSize }}
               >
                 {config.profilePhoto ? (
@@ -113,21 +113,21 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
                   </div>
                 )}
               </div>
-              <h2 className="text-lg font-bold text-primary text-center">
+              <h2 className="text-base font-bold text-primary text-center flex-shrink-0">
                 {config.fields.find((f) => f.key === 'name')?.value || 'Full Name'}
               </h2>
             </>
           )}
 
           {/* Fields */}
-          <div className={`w-full ${isVertical ? 'mt-3' : ''} text-xs space-y-1`}>
+          <div className={`w-full ${isVertical ? 'mt-2' : ''} text-[10px] space-y-0.5 flex-shrink-0`}>
             {enabledFields
               .filter((f) => f.key !== 'name')
-              .slice(0, isVertical ? 6 : 4)
+              .slice(0, isVertical ? 5 : 4)
               .map((field) => (
                 <div
                   key={field.key}
-                  className="flex justify-between border-b border-border pb-1"
+                  className="flex justify-between border-b border-border pb-0.5"
                 >
                   <span className="font-semibold text-muted-foreground">{field.label}:</span>
                   <span className="text-foreground">{field.value || '--'}</span>
@@ -136,10 +136,10 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
           </div>
 
           {/* Footer with QR and Signature */}
-          <div className={`mt-auto flex ${isVertical ? 'justify-between w-full items-end' : 'flex-col items-center gap-2'}`}>
+          <div className={`mt-auto pt-2 flex ${isVertical ? 'justify-between w-full items-end' : 'flex-col items-center gap-1'} flex-shrink-0`}>
             {config.showQRCode && (
-              <div className="bg-card p-1 rounded">
-                <QRCodeSVG value={qrData} size={isVertical ? 50 : 40} />
+              <div className="bg-white p-1 rounded shadow-sm">
+                <QRCodeSVG value={qrData} size={isVertical ? 40 : 35} />
               </div>
             )}
             
@@ -148,12 +148,12 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
                 <img
                   src={config.authorizedSignature}
                   alt="Signature"
-                  className="h-8 object-contain mx-auto"
+                  className="h-6 object-contain mx-auto"
                 />
               ) : (
-                <div className="w-20 border-t border-foreground/50" />
+                <div className="w-16 border-t-2 border-foreground/60" />
               )}
-              <p className="text-[10px] text-muted-foreground mt-1">{config.signatoryTitle}</p>
+              <p className="text-[9px] text-muted-foreground mt-0.5 font-medium">{config.signatoryTitle}</p>
             </div>
           </div>
         </div>
