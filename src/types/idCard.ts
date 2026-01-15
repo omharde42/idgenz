@@ -53,6 +53,7 @@ export interface IDCardConfig {
   cardSize: CardSizeType;
   headerColor: string;
   footerColor: string;
+  textColor: string;
   photoSize: number;
   fields: IDCardField[];
   profilePhoto: string | null;
@@ -62,6 +63,37 @@ export interface IDCardConfig {
   showQRCode: boolean;
   signatoryTitle: string;
 }
+
+export const textColorOptions = [
+  { color: '#000000', name: 'Black' },
+  { color: '#1a1a1a', name: 'Charcoal' },
+  { color: '#333333', name: 'Dark Gray' },
+  { color: '#4a4a4a', name: 'Gray' },
+  { color: '#666666', name: 'Medium Gray' },
+  { color: '#ffffff', name: 'White' },
+  { color: '#1e40af', name: 'Blue' },
+  { color: '#1d4ed8', name: 'Royal Blue' },
+  { color: '#2563eb', name: 'Bright Blue' },
+  { color: '#0284c7', name: 'Sky Blue' },
+  { color: '#0891b2', name: 'Cyan' },
+  { color: '#14532d', name: 'Dark Green' },
+  { color: '#166534', name: 'Forest Green' },
+  { color: '#15803d', name: 'Green' },
+  { color: '#059669', name: 'Emerald' },
+  { color: '#0d9488', name: 'Teal' },
+  { color: '#7c2d12', name: 'Brown' },
+  { color: '#9a3412', name: 'Burnt Orange' },
+  { color: '#c2410c', name: 'Orange' },
+  { color: '#dc2626', name: 'Red' },
+  { color: '#b91c1c', name: 'Dark Red' },
+  { color: '#be123c', name: 'Rose' },
+  { color: '#9333ea', name: 'Purple' },
+  { color: '#7c3aed', name: 'Violet' },
+  { color: '#6366f1', name: 'Indigo' },
+  { color: '#d97706', name: 'Amber' },
+  { color: '#ca8a04', name: 'Yellow' },
+  { color: '#65a30d', name: 'Lime' },
+];
 
 export const categoryLabels: Record<CategoryType, string> = {
   school: 'School',
