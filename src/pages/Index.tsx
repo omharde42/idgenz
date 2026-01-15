@@ -1,7 +1,10 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toPng } from 'html-to-image';
 import { toast } from 'sonner';
-import { CreditCard } from 'lucide-react';
+import { CreditCard, LogOut, User } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { IDCardConfig, CategoryType, getDefaultFields, signatoryTitles, IDCardField, defaultCardSizes } from '@/types/idCard';
 import CategorySelector from '@/components/id-card/CategorySelector';
 import FieldsManager from '@/components/id-card/FieldsManager';
@@ -13,6 +16,8 @@ import DesignSuggestions from '@/components/id-card/DesignSuggestions';
 import ExtractDataFromPhoto from '@/components/id-card/ExtractDataFromPhoto';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+
 const getInitialConfig = (category: CategoryType): IDCardConfig => ({
   category,
   institutionName: '',
@@ -32,9 +37,36 @@ const getInitialConfig = (category: CategoryType): IDCardConfig => ({
   signatoryTitle: signatoryTitles[category]
 });
 const Index = () => {
+  const navigate = useNavigate();
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [config, setConfig] = useState<IDCardConfig>(getInitialConfig('school'));
   const [isGenerating, setIsGenerating] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast.success('Logged out successfully');
+      navigate('/auth');
+    } catch (error) {
+      toast.error('Failed to log out');
+    }
+  };
   const handleCategoryChange = useCallback((category: CategoryType) => {
     setConfig(prev => ({
       ...prev,
@@ -90,15 +122,37 @@ const Index = () => {
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-center gap-3">
-            <div className="p-2 bg-primary rounded-lg">
-              <CreditCard className="w-6 h-6 text-primary-foreground" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary rounded-lg">
+                <CreditCard className="w-6 h-6 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-foreground">ID Card Generator</h1>
+                <p className="text-sm text-muted-foreground">
+                  Create professional ID cards for any institution or event
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">ID Card Generator</h1>
-              <p className="text-sm text-muted-foreground">
-                Create professional ID cards for any institution or event
-              </p>
+            
+            {/* Auth Section */}
+            <div className="flex items-center gap-3">
+              {user ? (
+                <>
+                  <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
+                    <User className="w-4 h-4" />
+                    <span className="max-w-[150px] truncate">{user.email}</span>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center gap-2">
+                    <LogOut className="w-4 h-4" />
+                    <span className="hidden sm:inline">Logout</span>
+                  </Button>
+                </>
+              ) : (
+                <Button variant="default" size="sm" onClick={() => navigate('/auth')}>
+                  Login
+                </Button>
+              )}
             </div>
           </div>
         </div>
