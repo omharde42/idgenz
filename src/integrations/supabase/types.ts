@@ -14,7 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      saved_id_cards: {
+        Row: {
+          category: string
+          config: Json
+          created_at: string
+          id: string
+          image_url: string
+          institution_name: string | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          config: Json
+          created_at?: string
+          id?: string
+          image_url: string
+          institution_name?: string | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          config?: Json
+          created_at?: string
+          id?: string
+          image_url?: string
+          institution_name?: string | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

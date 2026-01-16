@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toPng } from 'html-to-image';
 import { toast } from 'sonner';
-import { CreditCard, LogOut, User } from 'lucide-react';
+import { CreditCard, LogOut, User, Loader2, FolderOpen } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { IDCardConfig, CategoryType, getDefaultFields, signatoryTitles, IDCardField, defaultCardSizes } from '@/types/idCard';
@@ -14,9 +14,11 @@ import IDCardPreview from '@/components/id-card/IDCardPreview';
 import ActionButtons from '@/components/id-card/ActionButtons';
 import DesignSuggestions from '@/components/id-card/DesignSuggestions';
 import ExtractDataFromPhoto from '@/components/id-card/ExtractDataFromPhoto';
+import SavedCards from '@/components/id-card/SavedCards';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const getInitialConfig = (category: CategoryType): IDCardConfig => ({
   category,
@@ -41,19 +43,24 @@ const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [config, setConfig] = useState<IDCardConfig>(getInitialConfig('school'));
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedCardsRefresh, setSavedCardsRefresh] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setIsAuthLoading(false);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setIsAuthLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -119,6 +126,77 @@ const Index = () => {
     setConfig(getInitialConfig(config.category));
     toast.info('Form has been reset');
   }, [config.category]);
+
+  const handleSave = useCallback(async () => {
+    if (!cardRef.current || !user) return;
+    setIsSaving(true);
+    try {
+      const dataUrl = await toPng(cardRef.current, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: '#ffffff'
+      });
+
+      // Convert data URL to blob
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      
+      // Generate unique filename
+      const name = config.fields.find(f => f.key === 'name')?.value || 'ID-Card';
+      const timestamp = Date.now();
+      const fileName = `${user.id}/${name.replace(/\s+/g, '-')}-${timestamp}.png`;
+
+      // Upload to storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('id-cards')
+        .upload(fileName, blob, {
+          contentType: 'image/png',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('id-cards')
+        .getPublicUrl(fileName);
+
+      // Save to database
+      const { error: dbError } = await supabase
+        .from('saved_id_cards')
+        .insert([{
+          user_id: user.id,
+          name: name,
+          category: config.category,
+          institution_name: config.institutionName || null,
+          image_url: publicUrl,
+          config: config as unknown as Record<string, unknown>
+        }] as any);
+
+      if (dbError) throw dbError;
+
+      toast.success('ID Card saved to your account!');
+      setSavedCardsRefresh(prev => prev + 1);
+    } catch (error) {
+      console.error('Error saving ID card:', error);
+      toast.error('Failed to save ID card. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [config, user]);
+
+  // Show loading spinner while checking auth
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Show login prompt if not authenticated
   if (!user) {
     return (
@@ -266,21 +344,46 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Right Panel - Preview */}
-          <div className="flex-1 flex flex-col">
-            <div className="bg-secondary/30 rounded-xl border border-border p-6 flex-1 flex flex-col items-center justify-center min-h-[600px]">
-              <p className="text-sm text-muted-foreground mb-6">Live Preview</p>
+          {/* Right Panel - Preview & Saved Cards */}
+          <div className="flex-1 flex flex-col gap-6">
+            <Tabs defaultValue="preview" className="w-full">
+              <TabsList className="w-full grid grid-cols-2">
+                <TabsTrigger value="preview">Live Preview</TabsTrigger>
+                <TabsTrigger value="saved" className="flex items-center gap-2">
+                  <FolderOpen className="w-4 h-4" />
+                  Saved Cards
+                </TabsTrigger>
+              </TabsList>
               
-              {/* ID Card Preview */}
-              <div className="print:m-0" id="id-card-preview">
-                <IDCardPreview ref={cardRef} config={config} />
-              </div>
+              <TabsContent value="preview" className="mt-4">
+                <div className="bg-secondary/30 rounded-xl border border-border p-6 flex flex-col items-center justify-center min-h-[600px]">
+                  <p className="text-sm text-muted-foreground mb-6">Live Preview</p>
+                  
+                  {/* ID Card Preview */}
+                  <div className="print:m-0" id="id-card-preview">
+                    <IDCardPreview ref={cardRef} config={config} />
+                  </div>
 
-              {/* Action Buttons */}
-              <div className="mt-8 w-full max-w-md">
-                <ActionButtons onDownload={handleDownload} onPrint={handlePrint} onReset={handleReset} isGenerating={isGenerating} />
-              </div>
-            </div>
+                  {/* Action Buttons */}
+                  <div className="mt-8 w-full max-w-md">
+                    <ActionButtons 
+                      onDownload={handleDownload} 
+                      onPrint={handlePrint} 
+                      onReset={handleReset} 
+                      onSave={handleSave}
+                      isGenerating={isGenerating}
+                      isSaving={isSaving}
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="saved" className="mt-4">
+                <div className="bg-secondary/30 rounded-xl border border-border p-6 min-h-[600px]">
+                  <SavedCards userId={user.id} refreshTrigger={savedCardsRefresh} />
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>
