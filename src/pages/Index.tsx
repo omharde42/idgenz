@@ -119,6 +119,55 @@ const Index = () => {
     setConfig(getInitialConfig(config.category));
     toast.info('Form has been reset');
   }, [config.category]);
+  // Show login prompt if not authenticated
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        {/* Header */}
+        <header className="border-b border-border bg-card/50 backdrop-blur-sm">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary rounded-lg">
+                  <CreditCard className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-foreground">ID Card Generator</h1>
+                  <p className="text-sm text-muted-foreground">
+                    Create professional ID cards for any institution or event
+                  </p>
+                </div>
+              </div>
+              <Button variant="default" size="sm" onClick={() => navigate('/auth')}>
+                Login
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        {/* Login Required Content */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center space-y-6 p-8">
+            <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
+              <CreditCard className="w-10 h-10 text-primary" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-foreground">Welcome to ID Card Generator</h2>
+              <p className="text-muted-foreground max-w-md">
+                Please login or create an account to start generating professional ID cards for schools, offices, events, and more.
+              </p>
+            </div>
+            <div className="flex gap-3 justify-center">
+              <Button onClick={() => navigate('/auth')} size="lg">
+                Login to Get Started
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
@@ -138,22 +187,14 @@ const Index = () => {
             
             {/* Auth Section */}
             <div className="flex items-center gap-3">
-              {user ? (
-                <>
-                  <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
-                    <User className="w-4 h-4" />
-                    <span className="max-w-[150px] truncate">{user.email}</span>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center gap-2">
-                    <LogOut className="w-4 h-4" />
-                    <span className="hidden sm:inline">Logout</span>
-                  </Button>
-                </>
-              ) : (
-                <Button variant="default" size="sm" onClick={() => navigate('/auth')}>
-                  Login
-                </Button>
-              )}
+              <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
+                <User className="w-4 h-4" />
+                <span className="max-w-[150px] truncate">{user.email}</span>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center gap-2">
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
             </div>
           </div>
         </div>
