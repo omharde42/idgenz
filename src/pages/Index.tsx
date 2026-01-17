@@ -127,6 +127,10 @@ const Index = () => {
     toast.info('Form has been reset');
   }, [config.category]);
 
+  const handleLoadSavedCard = useCallback((savedConfig: IDCardConfig) => {
+    setConfig(savedConfig);
+  }, []);
+
   const handleSave = useCallback(async () => {
     if (!cardRef.current || !user) return;
     setIsSaving(true);
@@ -380,7 +384,11 @@ const Index = () => {
               
               <TabsContent value="saved" className="mt-4">
                 <div className="bg-secondary/30 rounded-xl border border-border p-6 min-h-[600px]">
-                  <SavedCards userId={user.id} refreshTrigger={savedCardsRefresh} />
+                  <SavedCards 
+                    userId={user.id} 
+                    refreshTrigger={savedCardsRefresh} 
+                    onLoadCard={handleLoadSavedCard}
+                  />
                 </div>
               </TabsContent>
             </Tabs>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Download, Loader2, FolderOpen, FileSpreadsheet } from 'lucide-react';
+import { Trash2, Download, Loader2, FolderOpen, FileSpreadsheet, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,9 +36,10 @@ interface SavedCard {
 interface SavedCardsProps {
   userId: string;
   refreshTrigger: number;
+  onLoadCard?: (config: IDCardConfig) => void;
 }
 
-const SavedCards: React.FC<SavedCardsProps> = ({ userId, refreshTrigger }) => {
+const SavedCards: React.FC<SavedCardsProps> = ({ userId, refreshTrigger, onLoadCard }) => {
   const [cards, setCards] = useState<SavedCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -245,6 +246,15 @@ const SavedCards: React.FC<SavedCardsProps> = ({ userId, refreshTrigger }) => {
     }
   };
 
+  const handleLoadCard = (card: SavedCard) => {
+    if (onLoadCard && card.config) {
+      onLoadCard(card.config);
+      toast.success(`Loaded "${card.name}" into editor`);
+    } else {
+      toast.error('Unable to load card configuration');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -297,11 +307,23 @@ const SavedCards: React.FC<SavedCardsProps> = ({ userId, refreshTrigger }) => {
                 className="w-full h-full object-contain"
               />
               <div className="absolute inset-0 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                {onLoadCard && (
+                  <Button
+                    size="icon"
+                    variant="default"
+                    className="h-8 w-8"
+                    onClick={() => handleLoadCard(card)}
+                    title="Load into editor"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </Button>
+                )}
                 <Button
                   size="icon"
                   variant="secondary"
                   className="h-8 w-8"
                   onClick={() => handleDownload(card)}
+                  title="Download"
                 >
                   <Download className="w-4 h-4" />
                 </Button>
@@ -312,6 +334,7 @@ const SavedCards: React.FC<SavedCardsProps> = ({ userId, refreshTrigger }) => {
                       variant="destructive"
                       className="h-8 w-8"
                       disabled={deletingId === card.id}
+                      title="Delete"
                     >
                       {deletingId === card.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
