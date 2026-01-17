@@ -17,18 +17,26 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
     const cardWidth = isVertical ? selectedSize.height : selectedSize.width;
     const cardHeight = isVertical ? selectedSize.width : selectedSize.height;
     
-    // Generate comprehensive QR code data with all user details
+    // Get all fields including address and emergency contact
+    const addressField = config.fields.find(f => f.key === 'address');
+    const emergencyContactField = config.fields.find(f => f.key === 'emergencyContact');
+    
+    // Generate comprehensive QR code data with ALL user details for scanning
     const qrData = JSON.stringify({
+      cardType: 'ID Card',
       institution: config.institutionName || 'Institution',
-      address: config.institutionAddress || '',
+      institutionAddress: config.institutionAddress || '',
       category: config.category,
+      // Include ALL enabled fields with their labels
       ...enabledFields.reduce((acc, field) => {
-        if (field.value) {
-          acc[field.key] = field.value;
-        }
+        acc[field.label] = field.value || '';
         return acc;
       }, {} as Record<string, string>),
+      // Always include address and emergency contact if they have values
+      address: addressField?.value || '',
+      emergencyContact: emergencyContactField?.value || '',
       issuedBy: config.signatoryTitle,
+      validFrom: new Date().toISOString().split('T')[0],
     });
 
     const cardClasses = `
@@ -144,11 +152,11 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
             </>
           )}
 
-          {/* Fields */}
-          <div className={`w-full ${isVertical ? 'mt-1' : ''} text-[9px] space-y-0 flex-shrink-0`}>
+          {/* Fields - Show more fields including address and emergency contact */}
+          <div className={`w-full ${isVertical ? 'mt-1' : ''} text-[9px] space-y-0 flex-shrink-0 overflow-auto`}>
             {enabledFields
               .filter((f) => f.key !== 'name')
-              .slice(0, isVertical ? 4 : 4)
+              .slice(0, isVertical ? 6 : 5)
               .map((field) => (
                 <div
                   key={field.key}
@@ -157,7 +165,9 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
                   <span className="font-medium" style={{ color: config.textColor ? `${config.textColor}99` : undefined }}>
                     {field.label}:
                   </span>
-                  <span style={textStyle}>{field.value || '--'}</span>
+                  <span style={textStyle} className="truncate max-w-[60%] text-right">
+                    {field.value || '--'}
+                  </span>
                 </div>
               ))}
           </div>
@@ -165,8 +175,13 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
           {/* Footer with QR and Signature */}
           <div className={`mt-auto pt-1 flex ${isVertical ? 'justify-between w-full items-end gap-2' : 'flex-col items-center gap-1'} flex-shrink-0`}>
             {config.showQRCode && (
-              <div className="bg-white p-0.5 rounded shadow-sm flex-shrink-0">
-                <QRCodeSVG value={qrData} size={32} />
+              <div className="bg-white p-1 rounded shadow-sm flex-shrink-0" title="Scan to view all details">
+                <QRCodeSVG 
+                  value={qrData} 
+                  size={isVertical ? 36 : 40} 
+                  level="M"
+                  includeMargin={false}
+                />
               </div>
             )}
             

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Download, Loader2, FolderOpen } from 'lucide-react';
+import { Trash2, Download, Loader2, FolderOpen, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { IDCardConfig, IDCardField } from '@/types/idCard';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,6 +16,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface SavedCard {
   id: string;
@@ -23,6 +30,7 @@ interface SavedCard {
   institution_name: string | null;
   image_url: string;
   created_at: string;
+  config: IDCardConfig;
 }
 
 interface SavedCardsProps {
@@ -39,17 +47,154 @@ const SavedCards: React.FC<SavedCardsProps> = ({ userId, refreshTrigger }) => {
     try {
       const { data, error } = await supabase
         .from('saved_id_cards')
-        .select('id, name, category, institution_name, image_url, created_at')
+        .select('id, name, category, institution_name, image_url, created_at, config')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setCards(data || []);
+      setCards((data || []).map(card => ({
+        ...card,
+        config: card.config as unknown as IDCardConfig
+      })));
     } catch (error) {
       console.error('Error fetching saved cards:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const exportToCSV = () => {
+    if (cards.length === 0) {
+      toast.error('No cards to export');
+      return;
+    }
+
+    // Build header row from all possible fields
+    const allFieldKeys = new Set<string>();
+    cards.forEach(card => {
+      card.config?.fields?.forEach((field: IDCardField) => {
+        if (field.enabled && field.value) {
+          allFieldKeys.add(field.key);
+        }
+      });
+    });
+
+    const fieldKeysArray = Array.from(allFieldKeys);
+    const headers = ['Name', 'Category', 'Institution', 'Address', 'Created At', ...fieldKeysArray.map(key => {
+      const card = cards.find(c => c.config?.fields?.find((f: IDCardField) => f.key === key));
+      const field = card?.config?.fields?.find((f: IDCardField) => f.key === key);
+      return field?.label || key;
+    })];
+
+    const rows = cards.map(card => {
+      const config = card.config;
+      const fieldValues = fieldKeysArray.map(key => {
+        const field = config?.fields?.find((f: IDCardField) => f.key === key);
+        return field?.value || '';
+      });
+      return [
+        card.name,
+        card.category,
+        card.institution_name || config?.institutionName || '',
+        config?.institutionAddress || '',
+        new Date(card.created_at).toLocaleDateString(),
+        ...fieldValues
+      ];
+    });
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    downloadFile(csvContent, 'saved-id-cards.csv', 'text/csv');
+    toast.success('Exported to CSV successfully!');
+  };
+
+  const exportToExcel = () => {
+    if (cards.length === 0) {
+      toast.error('No cards to export');
+      return;
+    }
+
+    // Build header row from all possible fields
+    const allFieldKeys = new Set<string>();
+    cards.forEach(card => {
+      card.config?.fields?.forEach((field: IDCardField) => {
+        if (field.enabled && field.value) {
+          allFieldKeys.add(field.key);
+        }
+      });
+    });
+
+    const fieldKeysArray = Array.from(allFieldKeys);
+    const headers = ['Name', 'Category', 'Institution', 'Address', 'Created At', ...fieldKeysArray.map(key => {
+      const card = cards.find(c => c.config?.fields?.find((f: IDCardField) => f.key === key));
+      const field = card?.config?.fields?.find((f: IDCardField) => f.key === key);
+      return field?.label || key;
+    })];
+
+    const rows = cards.map(card => {
+      const config = card.config;
+      const fieldValues = fieldKeysArray.map(key => {
+        const field = config?.fields?.find((f: IDCardField) => f.key === key);
+        return field?.value || '';
+      });
+      return [
+        card.name,
+        card.category,
+        card.institution_name || config?.institutionName || '',
+        config?.institutionAddress || '',
+        new Date(card.created_at).toLocaleDateString(),
+        ...fieldValues
+      ];
+    });
+
+    // Create XML-based Excel file
+    let excelContent = '<?xml version="1.0"?>\n';
+    excelContent += '<?mso-application progid="Excel.Sheet"?>\n';
+    excelContent += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n';
+    excelContent += '<Worksheet ss:Name="ID Cards">\n<Table>\n';
+    
+    // Header row
+    excelContent += '<Row>\n';
+    headers.forEach(header => {
+      excelContent += `<Cell><Data ss:Type="String">${escapeXml(header)}</Data></Cell>\n`;
+    });
+    excelContent += '</Row>\n';
+    
+    // Data rows
+    rows.forEach(row => {
+      excelContent += '<Row>\n';
+      row.forEach(cell => {
+        excelContent += `<Cell><Data ss:Type="String">${escapeXml(String(cell))}</Data></Cell>\n`;
+      });
+      excelContent += '</Row>\n';
+    });
+    
+    excelContent += '</Table>\n</Worksheet>\n</Workbook>';
+
+    downloadFile(excelContent, 'saved-id-cards.xls', 'application/vnd.ms-excel');
+    toast.success('Exported to Excel successfully!');
+  };
+
+  const escapeXml = (str: string) => {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  };
+
+  const downloadFile = (content: string, filename: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    window.URL.revokeObjectURL(url);
   };
 
   useEffect(() => {
@@ -119,8 +264,30 @@ const SavedCards: React.FC<SavedCardsProps> = ({ userId, refreshTrigger }) => {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-      {cards.map((card) => (
+    <div className="space-y-4">
+      {/* Export Buttons */}
+      <div className="flex justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2">
+              <FileSpreadsheet className="w-4 h-4" />
+              Export All
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={exportToCSV}>
+              Export as CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={exportToExcel}>
+              Export as Excel
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Cards Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {cards.map((card) => (
         <Card key={card.id} className="overflow-hidden group">
           <CardContent className="p-2">
             <div className="relative aspect-[3/4] bg-muted rounded overflow-hidden mb-2">
@@ -176,7 +343,8 @@ const SavedCards: React.FC<SavedCardsProps> = ({ userId, refreshTrigger }) => {
             </div>
           </CardContent>
         </Card>
-      ))}
+        ))}
+      </div>
     </div>
   );
 };
