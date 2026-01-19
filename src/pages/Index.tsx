@@ -47,6 +47,7 @@ const Index = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [savedCardsRefresh, setSavedCardsRefresh] = useState(0);
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const {
@@ -127,10 +128,12 @@ const Index = () => {
   }, []);
   const handleReset = useCallback(() => {
     setConfig(getInitialConfig(config.category));
+    setEditingCardId(null);
     toast.info('Form has been reset');
   }, [config.category]);
-  const handleLoadSavedCard = useCallback((savedConfig: IDCardConfig) => {
+  const handleLoadSavedCard = useCallback((savedConfig: IDCardConfig, cardId: string) => {
     setConfig(savedConfig);
+    setEditingCardId(cardId);
   }, []);
   const handleSave = useCallback(async () => {
     if (!cardRef.current || !user) return;
@@ -168,19 +171,36 @@ const Index = () => {
         }
       } = supabase.storage.from('id-cards').getPublicUrl(fileName);
 
-      // Save to database
-      const {
-        error: dbError
-      } = await supabase.from('saved_id_cards').insert([{
-        user_id: user.id,
-        name: name,
-        category: config.category,
-        institution_name: config.institutionName || null,
-        image_url: publicUrl,
-        config: config as unknown as Record<string, unknown>
-      }] as any);
-      if (dbError) throw dbError;
-      toast.success('ID Card saved to your account!');
+      if (editingCardId) {
+        // Update existing card
+        const { error: dbError } = await supabase
+          .from('saved_id_cards')
+          .update({
+            name: name,
+            category: config.category,
+            institution_name: config.institutionName || null,
+            image_url: publicUrl,
+            config: config as any
+          } as any)
+          .eq('id', editingCardId);
+        if (dbError) throw dbError;
+        toast.success('ID Card updated successfully!');
+      } else {
+        // Save new card to database
+        const {
+          error: dbError
+        } = await supabase.from('saved_id_cards').insert([{
+          user_id: user.id,
+          name: name,
+          category: config.category,
+          institution_name: config.institutionName || null,
+          image_url: publicUrl,
+          config: config as unknown as Record<string, unknown>
+        }] as any);
+        if (dbError) throw dbError;
+        toast.success('ID Card saved to your account!');
+      }
+      
       setSavedCardsRefresh(prev => prev + 1);
     } catch (error) {
       console.error('Error saving ID card:', error);
@@ -188,7 +208,7 @@ const Index = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [config, user]);
+  }, [config, user, editingCardId]);
 
   // Show loading spinner while checking auth
   if (isAuthLoading) {
