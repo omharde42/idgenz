@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Trash2, Download, Loader2, FolderOpen, FileSpreadsheet, Edit2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Trash2, Download, Loader2, FolderOpen, FileSpreadsheet, Edit2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { IDCardConfig, IDCardField } from '@/types/idCard';
@@ -36,13 +37,34 @@ interface SavedCard {
 interface SavedCardsProps {
   userId: string;
   refreshTrigger: number;
-  onLoadCard?: (config: IDCardConfig) => void;
+  onLoadCard?: (config: IDCardConfig, cardId: string) => void;
 }
 
 const SavedCards: React.FC<SavedCardsProps> = ({ userId, refreshTrigger, onLoadCard }) => {
   const [cards, setCards] = useState<SavedCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter cards based on search query
+  const filteredCards = useMemo(() => {
+    if (!searchQuery.trim()) return cards;
+    const query = searchQuery.toLowerCase();
+    return cards.filter(card => {
+      // Search by name
+      if (card.name.toLowerCase().includes(query)) return true;
+      // Search by category
+      if (card.category.toLowerCase().includes(query)) return true;
+      // Search by institution name
+      if (card.institution_name?.toLowerCase().includes(query)) return true;
+      // Search by fields (e.g., student ID, roll number)
+      const fields = card.config?.fields || [];
+      return fields.some((field: IDCardField) => 
+        field.value?.toLowerCase().includes(query) ||
+        field.label?.toLowerCase().includes(query)
+      );
+    });
+  }, [cards, searchQuery]);
 
   const fetchCards = async () => {
     try {
@@ -248,8 +270,8 @@ const SavedCards: React.FC<SavedCardsProps> = ({ userId, refreshTrigger, onLoadC
 
   const handleLoadCard = (card: SavedCard) => {
     if (onLoadCard && card.config) {
-      onLoadCard(card.config);
-      toast.success(`Loaded "${card.name}" into editor`);
+      onLoadCard(card.config, card.id);
+      toast.success(`Loaded "${card.name}" into editor - changes will update this card`);
     } else {
       toast.error('Unable to load card configuration');
     }
@@ -275,8 +297,17 @@ const SavedCards: React.FC<SavedCardsProps> = ({ userId, refreshTrigger, onLoadC
 
   return (
     <div className="space-y-4">
-      {/* Export Buttons */}
-      <div className="flex justify-end">
+      {/* Search and Export */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name, ID, category..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2">
@@ -296,8 +327,14 @@ const SavedCards: React.FC<SavedCardsProps> = ({ userId, refreshTrigger, onLoadC
       </div>
 
       {/* Cards Grid */}
+      {filteredCards.length === 0 && searchQuery && (
+        <div className="text-center py-8 text-muted-foreground">
+          <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">No cards found for "{searchQuery}"</p>
+        </div>
+      )}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {cards.map((card) => (
+        {filteredCards.map((card) => (
         <Card key={card.id} className="overflow-hidden group">
           <CardContent className="p-2">
             <div className="relative aspect-[3/4] bg-muted rounded overflow-hidden mb-2">
