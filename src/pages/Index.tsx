@@ -19,7 +19,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
 const getInitialConfig = (category: CategoryType): IDCardConfig => ({
   category,
   institutionName: '',
@@ -49,23 +48,27 @@ const Index = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [savedCardsRefresh, setSavedCardsRefresh] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: {
+        subscription
+      }
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsAuthLoading(false);
     });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({
+      data: {
+        session
+      }
+    }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsAuthLoading(false);
     });
-
     return () => subscription.unsubscribe();
   }, []);
-
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -126,11 +129,9 @@ const Index = () => {
     setConfig(getInitialConfig(config.category));
     toast.info('Form has been reset');
   }, [config.category]);
-
   const handleLoadSavedCard = useCallback((savedConfig: IDCardConfig) => {
     setConfig(savedConfig);
   }, []);
-
   const handleSave = useCallback(async () => {
     if (!cardRef.current || !user) return;
     setIsSaving(true);
@@ -144,41 +145,41 @@ const Index = () => {
       // Convert data URL to blob
       const response = await fetch(dataUrl);
       const blob = await response.blob();
-      
+
       // Generate unique filename
       const name = config.fields.find(f => f.key === 'name')?.value || 'ID-Card';
       const timestamp = Date.now();
       const fileName = `${user.id}/${name.replace(/\s+/g, '-')}-${timestamp}.png`;
 
       // Upload to storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('id-cards')
-        .upload(fileName, blob, {
-          contentType: 'image/png',
-          upsert: false
-        });
-
+      const {
+        data: uploadData,
+        error: uploadError
+      } = await supabase.storage.from('id-cards').upload(fileName, blob, {
+        contentType: 'image/png',
+        upsert: false
+      });
       if (uploadError) throw uploadError;
 
       // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('id-cards')
-        .getPublicUrl(fileName);
+      const {
+        data: {
+          publicUrl
+        }
+      } = supabase.storage.from('id-cards').getPublicUrl(fileName);
 
       // Save to database
-      const { error: dbError } = await supabase
-        .from('saved_id_cards')
-        .insert([{
-          user_id: user.id,
-          name: name,
-          category: config.category,
-          institution_name: config.institutionName || null,
-          image_url: publicUrl,
-          config: config as unknown as Record<string, unknown>
-        }] as any);
-
+      const {
+        error: dbError
+      } = await supabase.from('saved_id_cards').insert([{
+        user_id: user.id,
+        name: name,
+        category: config.category,
+        institution_name: config.institutionName || null,
+        image_url: publicUrl,
+        config: config as unknown as Record<string, unknown>
+      }] as any);
       if (dbError) throw dbError;
-
       toast.success('ID Card saved to your account!');
       setSavedCardsRefresh(prev => prev + 1);
     } catch (error) {
@@ -191,20 +192,17 @@ const Index = () => {
 
   // Show loading spinner while checking auth
   if (isAuthLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+    return <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
           <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
           <p className="text-muted-foreground">Loading...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
 
   // Show login prompt if not authenticated
   if (!user) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
+    return <div className="min-h-screen bg-background flex flex-col">
         {/* Header */}
         <header className="border-b border-border bg-card/50 backdrop-blur-sm">
           <div className="container mx-auto px-4 py-4">
@@ -214,7 +212,7 @@ const Index = () => {
                   <CreditCard className="w-6 h-6 text-primary-foreground" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-foreground">ID Card Generator</h1>
+                  <h1 className="text-xl font-bold text-foreground">IDCRAFT</h1>
                   <p className="text-sm text-muted-foreground">
                     Create professional ID cards for any institution or event
                   </p>
@@ -234,10 +232,8 @@ const Index = () => {
               <CreditCard className="w-10 h-10 text-primary" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-foreground">Welcome to ID Card Generator</h2>
-              <p className="text-muted-foreground max-w-md">
-                Please login or create an account to start generating professional ID cards for schools, offices, events, and more.
-              </p>
+              <h2 className="text-2xl font-bold text-foreground">Welcome to IDCRAFT</h2>
+              <p className="text-muted-foreground max-w-md">Please login or create an account to start generating professional ID cards for schools, offices, events, and more. </p>
             </div>
             <div className="flex gap-3 justify-center">
               <Button onClick={() => navigate('/auth')} size="lg">
@@ -246,10 +242,8 @@ const Index = () => {
             </div>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   return <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
@@ -370,25 +364,14 @@ const Index = () => {
 
                   {/* Action Buttons */}
                   <div className="mt-8 w-full max-w-md">
-                    <ActionButtons 
-                      onDownload={handleDownload} 
-                      onPrint={handlePrint} 
-                      onReset={handleReset} 
-                      onSave={handleSave}
-                      isGenerating={isGenerating}
-                      isSaving={isSaving}
-                    />
+                    <ActionButtons onDownload={handleDownload} onPrint={handlePrint} onReset={handleReset} onSave={handleSave} isGenerating={isGenerating} isSaving={isSaving} />
                   </div>
                 </div>
               </TabsContent>
               
               <TabsContent value="saved" className="mt-4">
                 <div className="bg-secondary/30 rounded-xl border border-border p-6 min-h-[600px]">
-                  <SavedCards 
-                    userId={user.id} 
-                    refreshTrigger={savedCardsRefresh} 
-                    onLoadCard={handleLoadSavedCard}
-                  />
+                  <SavedCards userId={user.id} refreshTrigger={savedCardsRefresh} onLoadCard={handleLoadSavedCard} />
                 </div>
               </TabsContent>
             </Tabs>
