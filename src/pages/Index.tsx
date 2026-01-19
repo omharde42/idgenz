@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toPng } from 'html-to-image';
 import { toast } from 'sonner';
-import { CreditCard, LogOut, User, Loader2, FolderOpen } from 'lucide-react';
+import { CreditCard, LogOut, User, Loader2, FolderOpen, ScanLine } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { IDCardConfig, CategoryType, getDefaultFields, signatoryTitles, IDCardField, defaultCardSizes } from '@/types/idCard';
@@ -15,6 +15,7 @@ import ActionButtons from '@/components/id-card/ActionButtons';
 import DesignSuggestions from '@/components/id-card/DesignSuggestions';
 import ExtractDataFromPhoto from '@/components/id-card/ExtractDataFromPhoto';
 import SavedCards from '@/components/id-card/SavedCards';
+import QRScanner from '@/components/id-card/QRScanner';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -48,6 +49,7 @@ const Index = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [savedCardsRefresh, setSavedCardsRefresh] = useState(0);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
+  const [showQRScanner, setShowQRScanner] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const {
@@ -290,6 +292,10 @@ const Index = () => {
             
             {/* Auth Section */}
             <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm" onClick={() => setShowQRScanner(true)} className="flex items-center gap-2">
+                <ScanLine className="w-4 h-4" />
+                <span className="hidden sm:inline">Scan QR</span>
+              </Button>
               <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
                 <User className="w-4 h-4" />
                 <span className="max-w-[150px] truncate">{user.email}</span>
@@ -424,6 +430,9 @@ const Index = () => {
           }
         }
       `}</style>
+
+      {/* QR Scanner Modal */}
+      <QRScanner open={showQRScanner} onClose={() => setShowQRScanner(false)} />
     </div>;
 };
 export default Index;
