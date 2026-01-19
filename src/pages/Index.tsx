@@ -135,7 +135,7 @@ const Index = () => {
     setConfig(savedConfig);
     setEditingCardId(cardId);
   }, []);
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(async (saveAsNew: boolean = false) => {
     if (!cardRef.current || !user) return;
     setIsSaving(true);
     try {
@@ -171,7 +171,7 @@ const Index = () => {
         }
       } = supabase.storage.from('id-cards').getPublicUrl(fileName);
 
-      if (editingCardId) {
+      if (editingCardId && !saveAsNew) {
         // Update existing card
         const { error: dbError } = await supabase
           .from('saved_id_cards')
@@ -198,7 +198,10 @@ const Index = () => {
           config: config as unknown as Record<string, unknown>
         }] as any);
         if (dbError) throw dbError;
-        toast.success('ID Card saved to your account!');
+        toast.success(saveAsNew ? 'ID Card saved as new copy!' : 'ID Card saved to your account!');
+        if (saveAsNew) {
+          setEditingCardId(null);
+        }
       }
       
       setSavedCardsRefresh(prev => prev + 1);
@@ -209,6 +212,10 @@ const Index = () => {
       setIsSaving(false);
     }
   }, [config, user, editingCardId]);
+
+  const handleSaveAsNew = useCallback(() => {
+    handleSave(true);
+  }, [handleSave]);
 
   // Show loading spinner while checking auth
   if (isAuthLoading) {
@@ -384,7 +391,7 @@ const Index = () => {
 
                   {/* Action Buttons */}
                   <div className="mt-8 w-full max-w-md">
-                    <ActionButtons onDownload={handleDownload} onPrint={handlePrint} onReset={handleReset} onSave={handleSave} isGenerating={isGenerating} isSaving={isSaving} />
+                    <ActionButtons onDownload={handleDownload} onPrint={handlePrint} onReset={handleReset} onSave={() => handleSave(false)} onSaveAsNew={handleSaveAsNew} isGenerating={isGenerating} isSaving={isSaving} isEditing={!!editingCardId} />
                   </div>
                 </div>
               </TabsContent>

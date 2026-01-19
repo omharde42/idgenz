@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Printer, RotateCcw, Save, Loader2 } from 'lucide-react';
+import { Download, Printer, RotateCcw, Save, Loader2, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ActionButtonsProps {
@@ -7,8 +7,10 @@ interface ActionButtonsProps {
   onPrint: () => void;
   onReset: () => void;
   onSave?: () => void;
+  onSaveAsNew?: () => void;
   isGenerating: boolean;
   isSaving?: boolean;
+  isEditing?: boolean;
 }
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
@@ -16,8 +18,10 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onPrint,
   onReset,
   onSave,
+  onSaveAsNew,
   isGenerating,
   isSaving = false,
+  isEditing = false,
 }) => {
   return (
     <div className="flex flex-wrap gap-3">
@@ -41,7 +45,18 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           ) : (
             <Save className="w-4 h-4 mr-2" />
           )}
-          {isSaving ? 'Saving...' : 'Save Card'}
+          {isSaving ? 'Saving...' : isEditing ? 'Update Card' : 'Save Card'}
+        </Button>
+      )}
+      {isEditing && onSaveAsNew && (
+        <Button
+          variant="secondary"
+          onClick={onSaveAsNew}
+          disabled={isSaving}
+          className="flex-1 min-w-[140px]"
+        >
+          <Copy className="w-4 h-4 mr-2" />
+          Save as New
         </Button>
       )}
       <Button
