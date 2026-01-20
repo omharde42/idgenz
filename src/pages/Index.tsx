@@ -387,7 +387,7 @@ const Index = () => {
               </TabsList>
               
               <TabsContent value="preview" className="mt-4">
-                <div className="bg-secondary/30 rounded-xl border border-border p-6 flex flex-col items-center justify-center min-h-[600px]">
+                <div className="bg-muted/50 rounded-xl border border-border p-6 flex flex-col items-center justify-center min-h-[600px]">
                   <p className="text-sm text-muted-foreground mb-6">Live Preview</p>
                   
                   {/* ID Card Preview */}
@@ -403,7 +403,7 @@ const Index = () => {
               </TabsContent>
               
               <TabsContent value="saved" className="mt-4">
-                <div className="bg-secondary/30 rounded-xl border border-border p-6 min-h-[600px]">
+                <div className="bg-muted/50 rounded-xl border border-border p-6 min-h-[600px]">
                   <SavedCards userId={user.id} refreshTrigger={savedCardsRefresh} onLoadCard={handleLoadSavedCard} />
                 </div>
               </TabsContent>
