@@ -20,6 +20,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import idcraftLogo from '@/assets/idcraft-logo.jpeg';
 const getInitialConfig = (category: CategoryType): IDCardConfig => ({
   category,
@@ -246,9 +247,12 @@ const Index = () => {
                   </p>
                 </div>
               </div>
-              <Button variant="default" size="sm" onClick={() => navigate('/auth')}>
-                Login
-              </Button>
+              <div className="flex items-center gap-2">
+                <ThemeToggle />
+                <Button variant="default" size="sm" onClick={() => navigate('/auth')}>
+                  Login
+                </Button>
+              </div>
             </div>
           </div>
         </header>
@@ -286,7 +290,8 @@ const Index = () => {
             </div>
             
             {/* Auth Section */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
               <Button variant="outline" size="sm" onClick={() => setShowQRScanner(true)} className="flex items-center gap-2">
                 <ScanLine className="w-4 h-4" />
                 <span className="hidden sm:inline">Scan QR</span>
