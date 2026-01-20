@@ -22,7 +22,7 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
     const emergencyContactField = config.fields.find(f => f.key === 'emergencyContact');
     
     // Generate comprehensive QR code data with ALL user details for scanning
-    const qrData = JSON.stringify({
+    const qrDataObject = {
       cardType: 'ID Card',
       institution: config.institutionName || 'Institution',
       institutionAddress: config.institutionAddress || '',
@@ -37,7 +37,11 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
       emergencyContact: emergencyContactField?.value || '',
       issuedBy: config.signatoryTitle,
       validFrom: new Date().toISOString().split('T')[0],
-    });
+    };
+    
+    // Create verification URL with encoded data
+    const encodedData = btoa(encodeURIComponent(JSON.stringify(qrDataObject)));
+    const verifyUrl = `${window.location.origin}/verify?data=${encodedData}`;
 
     const cardClasses = `
       ${config.cardShape === 'rounded' ? 'rounded-xl' : 'rounded-none'}
@@ -177,9 +181,9 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
             {config.showQRCode && (
               <div className="bg-white p-1 rounded shadow-sm flex-shrink-0" title="Scan to view all details">
                 <QRCodeSVG 
-                  value={qrData} 
+                  value={verifyUrl} 
                   size={isVertical ? 36 : 40} 
-                  level="M"
+                  level="L"
                   includeMargin={false}
                 />
               </div>
