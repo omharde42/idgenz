@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Mail, Lock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import idcraftLogo from '@/assets/idcraft-logo.jpeg';
 
 const emailSchema = z.string().email('Please enter a valid email address');
@@ -124,7 +125,12 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
+      {/* Theme Toggle */}
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+      
       <div className="w-full max-w-md">
         {/* Logo Header */}
         <div className="flex flex-col items-center justify-center mb-8">
