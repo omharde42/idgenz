@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CreditCard, Mail, Lock, User, Loader2 } from 'lucide-react';
+import { Mail, Lock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import idcraftLogo from '@/assets/idcraft-logo.jpeg';
 
 const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
@@ -126,14 +127,8 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo Header */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="p-3 bg-primary rounded-xl shadow-lg">
-            <CreditCard className="w-8 h-8 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">ID Card Generator</h1>
-            <p className="text-sm text-muted-foreground">Create professional ID cards</p>
-          </div>
+        <div className="flex flex-col items-center justify-center mb-8">
+          <img src={idcraftLogo} alt="IDCRAFT Logo" className="w-32 h-32 object-contain rounded-xl shadow-lg" />
         </div>
 
         <Card className="border-border shadow-xl">
