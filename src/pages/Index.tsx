@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toPng } from 'html-to-image';
 import { toast } from 'sonner';
-import { CreditCard, LogOut, User, Loader2, FolderOpen, ScanLine } from 'lucide-react';
+import { LogOut, User, Loader2, FolderOpen, ScanLine } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { IDCardConfig, CategoryType, getDefaultFields, signatoryTitles, IDCardField, defaultCardSizes } from '@/types/idCard';
@@ -20,6 +20,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import idcraftLogo from '@/assets/idcraft-logo.jpeg';
 const getInitialConfig = (category: CategoryType): IDCardConfig => ({
   category,
   institutionName: '',
@@ -237,13 +238,11 @@ const Index = () => {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary rounded-lg">
-                  <CreditCard className="w-6 h-6 text-primary-foreground" />
-                </div>
+                <img src={idcraftLogo} alt="IDCRAFT Logo" className="w-12 h-12 object-contain rounded-lg" />
                 <div>
                   <h1 className="text-xl font-bold text-foreground">IDCRAFT</h1>
                   <p className="text-sm text-muted-foreground">
-                    Create professional ID cards for any institution or event
+                    Universal ID Card Generator
                   </p>
                 </div>
               </div>
@@ -257,9 +256,7 @@ const Index = () => {
         {/* Login Required Content */}
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-6 p-8">
-            <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
-              <CreditCard className="w-10 h-10 text-primary" />
-            </div>
+            <img src={idcraftLogo} alt="IDCRAFT Logo" className="mx-auto w-24 h-24 object-contain rounded-xl shadow-lg" />
             <div className="space-y-2">
               <h2 className="text-2xl font-bold text-foreground">Welcome to IDCRAFT</h2>
               <p className="text-muted-foreground max-w-md">Please login or create an account to start generating professional ID cards for schools, offices, events, and more. </p>
@@ -279,13 +276,11 @@ const Index = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary rounded-lg">
-                <CreditCard className="w-6 h-6 text-primary-foreground" />
-              </div>
+              <img src={idcraftLogo} alt="IDCRAFT Logo" className="w-12 h-12 object-contain rounded-lg" />
               <div>
-                <h1 className="text-xl font-bold text-foreground">ID Card Generator</h1>
+                <h1 className="text-xl font-bold text-foreground">IDCRAFT</h1>
                 <p className="text-sm text-muted-foreground">
-                  Create professional ID cards for any institution or event
+                  Universal ID Card Generator
                 </p>
               </div>
             </div>
