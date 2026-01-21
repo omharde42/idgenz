@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toPng } from 'html-to-image';
 import { toast } from 'sonner';
-import { LogOut, User, Loader2, FolderOpen, ScanLine } from 'lucide-react';
+import { LogOut, User, Loader2, FolderOpen, ScanLine, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { IDCardConfig, CategoryType, getDefaultFields, signatoryTitles, IDCardField, defaultCardSizes } from '@/types/idCard';
@@ -16,6 +16,7 @@ import DesignSuggestions from '@/components/id-card/DesignSuggestions';
 import ExtractDataFromPhoto from '@/components/id-card/ExtractDataFromPhoto';
 import SavedCards from '@/components/id-card/SavedCards';
 import QRScanner from '@/components/id-card/QRScanner';
+import BulkGeneratorPanel from '@/components/id-card/bulk/BulkGeneratorPanel';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -52,6 +53,7 @@ const Index = () => {
   const [savedCardsRefresh, setSavedCardsRefresh] = useState(0);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
+  const [showBulkGenerator, setShowBulkGenerator] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const {
@@ -292,6 +294,10 @@ const Index = () => {
             {/* Auth Section */}
             <div className="flex items-center gap-2">
               <ThemeToggle />
+              <Button variant="default" size="sm" onClick={() => setShowBulkGenerator(true)} className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                <span className="hidden sm:inline">Bulk Generate</span>
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setShowQRScanner(true)} className="flex items-center gap-2">
                 <ScanLine className="w-4 h-4" />
                 <span className="hidden sm:inline">Scan QR</span>
@@ -433,6 +439,14 @@ const Index = () => {
 
       {/* QR Scanner Modal */}
       <QRScanner open={showQRScanner} onClose={() => setShowQRScanner(false)} />
+
+      {/* Bulk Generator Modal */}
+      {showBulkGenerator && (
+        <BulkGeneratorPanel
+          category={config.category}
+          onClose={() => setShowBulkGenerator(false)}
+        />
+      )}
     </div>;
 };
 export default Index;
