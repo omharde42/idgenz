@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { Upload, Settings, Users, Download, X, Sparkles } from 'lucide-react';
+import { Upload, Settings, Users, X, Sparkles, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
@@ -11,6 +10,7 @@ import BulkDataImport from './BulkDataImport';
 import BulkDesignControls from './BulkDesignControls';
 import BulkRecordsList from './BulkRecordsList';
 import BulkExporter from './BulkExporter';
+import BulkCardPreview from './BulkCardPreview';
 import ImageUploads from '../ImageUploads';
 
 interface BulkGeneratorPanelProps {
@@ -43,6 +43,7 @@ const BulkGeneratorPanel: React.FC<BulkGeneratorPanelProps> = ({ category, onClo
   const [records, setRecords] = useState<BulkRecord[]>([]);
   const [photos, setPhotos] = useState<PhotoMapping[]>([]);
   const [activeTab, setActiveTab] = useState('data');
+  const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
 
   // Match photos to records based on Student_ID
   useEffect(() => {
@@ -91,6 +92,13 @@ const BulkGeneratorPanel: React.FC<BulkGeneratorPanelProps> = ({ category, onClo
     }
   }, [photos, records]);
 
+  // Auto-select first record when records are imported
+  useEffect(() => {
+    if (records.length > 0 && !selectedRecordId) {
+      setSelectedRecordId(records[0].id);
+    }
+  }, [records, selectedRecordId]);
+
   const handleConfigUpdate = useCallback((updates: Partial<IDCardConfig>) => {
     setConfig(prev => ({ ...prev, ...updates }));
   }, []);
@@ -105,21 +113,43 @@ const BulkGeneratorPanel: React.FC<BulkGeneratorPanelProps> = ({ category, onClo
 
   const handleRemoveRecord = useCallback((id: string) => {
     setRecords(prev => prev.filter(r => r.id !== id));
-  }, []);
+    if (selectedRecordId === id) {
+      setSelectedRecordId(null);
+    }
+  }, [selectedRecordId]);
 
   const handleClearAll = useCallback(() => {
     setRecords([]);
     setPhotos([]);
+    setSelectedRecordId(null);
     toast.info('All records cleared');
+  }, []);
+
+  const handleSelectRecord = useCallback((id: string) => {
+    setSelectedRecordId(id);
   }, []);
 
   const isProcessing = useMemo(() => 
     records.some(r => r.status === 'generating'),
   [records]);
 
+  const selectedRecord = useMemo(() => 
+    records.find(r => r.id === selectedRecordId) || null,
+  [records, selectedRecordId]);
+
+  // Create preview config for selected record
+  const previewConfig: IDCardConfig | null = useMemo(() => {
+    if (!selectedRecord) return null;
+    return {
+      ...config,
+      fields: selectedRecord.fields,
+      profilePhoto: selectedRecord.profilePhoto || config.profilePhoto,
+    };
+  }, [selectedRecord, config]);
+
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+      <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center gap-3">
@@ -139,7 +169,7 @@ const BulkGeneratorPanel: React.FC<BulkGeneratorPanelProps> = ({ category, onClo
         {/* Content */}
         <div className="flex-1 flex overflow-hidden">
           {/* Left Panel - Controls */}
-          <div className="w-[400px] border-r border-border flex flex-col">
+          <div className="w-[380px] border-r border-border flex flex-col">
             <ScrollArea className="flex-1">
               <div className="p-4 space-y-4">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -200,8 +230,8 @@ const BulkGeneratorPanel: React.FC<BulkGeneratorPanelProps> = ({ category, onClo
             </div>
           </div>
 
-          {/* Right Panel - Records List */}
-          <div className="flex-1 flex flex-col">
+          {/* Middle Panel - Records List */}
+          <div className="w-[320px] border-r border-border flex flex-col">
             <div className="p-4 flex-1 overflow-hidden">
               {records.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center">
@@ -210,23 +240,53 @@ const BulkGeneratorPanel: React.FC<BulkGeneratorPanelProps> = ({ category, onClo
                   </div>
                   <h3 className="text-lg font-medium text-foreground mb-2">No Data Loaded</h3>
                   <p className="text-sm text-muted-foreground max-w-md">
-                    Upload an Excel or CSV file with student data. Photos can be matched automatically using Student_ID as filename.
+                    Upload an Excel or CSV file with student data.
                   </p>
                   <div className="mt-4 text-xs text-muted-foreground space-y-1">
-                    <p>✓ Supports .xlsx, .xls, .csv files</p>
+                    <p>✓ Supports .xlsx, .xls, .csv</p>
                     <p>✓ Auto-matches photos by ID</p>
-                    <p>✓ Validates data before export</p>
-                    <p>✓ Exports as print-ready ZIP</p>
+                    <p>✓ Validates before export</p>
                   </div>
                 </div>
               ) : (
                 <BulkRecordsList
                   records={records}
+                  selectedRecordId={selectedRecordId}
+                  onSelectRecord={handleSelectRecord}
                   onRemoveRecord={handleRemoveRecord}
                   onClearAll={handleClearAll}
                   isProcessing={isProcessing}
                 />
               )}
+            </div>
+          </div>
+
+          {/* Right Panel - Card Preview */}
+          <div className="flex-1 flex flex-col bg-muted/30">
+            <div className="p-4 border-b border-border flex items-center gap-2">
+              <Eye className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground">Card Preview</span>
+              {selectedRecord && (
+                <span className="text-xs text-muted-foreground ml-auto">
+                  Record #{selectedRecord.rowIndex}
+                </span>
+              )}
+            </div>
+            <div className="flex-1 flex items-center justify-center p-4 overflow-auto">
+              <BulkCardPreview
+                config={previewConfig}
+                record={selectedRecord}
+                totalRecords={records.length}
+                currentIndex={selectedRecord ? records.findIndex(r => r.id === selectedRecord.id) : -1}
+                onNavigate={(direction) => {
+                  if (records.length === 0) return;
+                  const currentIdx = records.findIndex(r => r.id === selectedRecordId);
+                  let newIdx = direction === 'prev' 
+                    ? (currentIdx - 1 + records.length) % records.length
+                    : (currentIdx + 1) % records.length;
+                  setSelectedRecordId(records[newIdx].id);
+                }}
+              />
             </div>
           </div>
         </div>
