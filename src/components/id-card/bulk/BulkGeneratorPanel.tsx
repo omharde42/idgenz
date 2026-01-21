@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { IDCardConfig, CategoryType, getDefaultFields, signatoryTitles, defaultCardSizes } from '@/types/idCard';
+import { IDCardConfig, CategoryType, getDefaultFields, signatoryTitles, defaultCardSizes, IDCardField } from '@/types/idCard';
 import { BulkRecord, PhotoMapping } from './types';
 import BulkDataImport from './BulkDataImport';
 import BulkDesignControls from './BulkDesignControls';
@@ -127,6 +127,19 @@ const BulkGeneratorPanel: React.FC<BulkGeneratorPanelProps> = ({ category, onClo
 
   const handleSelectRecord = useCallback((id: string) => {
     setSelectedRecordId(id);
+  }, []);
+
+  const handleUpdateRecord = useCallback((recordId: string, fields: typeof records[0]['fields'], profilePhoto?: string | null) => {
+    setRecords(prev => prev.map(r => {
+      if (r.id !== recordId) return r;
+      return {
+        ...r,
+        fields,
+        profilePhoto: profilePhoto !== undefined ? profilePhoto : r.profilePhoto,
+        // Reset status since data changed
+        status: 'pending' as const,
+      };
+    }));
   }, []);
 
   const isProcessing = useMemo(() => 
@@ -286,6 +299,7 @@ const BulkGeneratorPanel: React.FC<BulkGeneratorPanelProps> = ({ category, onClo
                     : (currentIdx + 1) % records.length;
                   setSelectedRecordId(records[newIdx].id);
                 }}
+                onUpdateRecord={handleUpdateRecord}
               />
             </div>
           </div>
