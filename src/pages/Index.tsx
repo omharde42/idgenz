@@ -170,12 +170,13 @@ const Index = () => {
       });
       if (uploadError) throw uploadError;
 
-      // Get public URL
+      // Get signed URL (valid for 1 year - 31536000 seconds)
       const {
-        data: {
-          publicUrl
-        }
-      } = supabase.storage.from('id-cards').getPublicUrl(fileName);
+        data: signedUrlData,
+        error: signedUrlError
+      } = await supabase.storage.from('id-cards').createSignedUrl(fileName, 31536000);
+      if (signedUrlError) throw signedUrlError;
+      const imageUrl = signedUrlData.signedUrl;
 
       if (editingCardId && !saveAsNew) {
         // Update existing card
@@ -185,7 +186,7 @@ const Index = () => {
             name: name,
             category: config.category,
             institution_name: config.institutionName || null,
-            image_url: publicUrl,
+            image_url: imageUrl,
             config: config as any
           } as any)
           .eq('id', editingCardId);
@@ -200,7 +201,7 @@ const Index = () => {
           name: name,
           category: config.category,
           institution_name: config.institutionName || null,
-          image_url: publicUrl,
+          image_url: imageUrl,
           config: config as unknown as Record<string, unknown>
         }] as any);
         if (dbError) throw dbError;
