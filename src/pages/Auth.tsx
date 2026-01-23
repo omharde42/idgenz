@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { PasswordStrengthIndicator, validatePasswordStrength } from '@/components/auth/PasswordStrengthIndicator';
+import { ForgotPasswordDialog } from '@/components/auth/ForgotPasswordDialog';
 import idcraftLogo from '@/assets/idcraft-logo.jpeg';
 
 const emailSchema = z.string().email('Please enter a valid email address');
@@ -251,6 +252,9 @@ const Auth = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                     />
+                  </div>
+                  <div className="flex justify-end">
+                    <ForgotPasswordDialog />
                   </div>
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? (
