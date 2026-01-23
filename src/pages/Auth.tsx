@@ -6,12 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import { Mail, Lock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { PasswordStrengthIndicator, validatePasswordStrength } from '@/components/auth/PasswordStrengthIndicator';
 import { ForgotPasswordDialog } from '@/components/auth/ForgotPasswordDialog';
+import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
 import idcraftLogo from '@/assets/idcraft-logo.jpeg';
 
 const emailSchema = z.string().email('Please enter a valid email address');
@@ -266,6 +268,17 @@ const Auth = () => {
                       'Login'
                     )}
                   </Button>
+                  
+                  <div className="relative my-4">
+                    <div className="absolute inset-0 flex items-center">
+                      <Separator className="w-full" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                    </div>
+                  </div>
+                  
+                  <GoogleAuthButton mode="login" isLoading={isLoading} />
                 </form>
               </TabsContent>
 
@@ -324,6 +337,17 @@ const Auth = () => {
                       'Create Account'
                     )}
                   </Button>
+                  
+                  <div className="relative my-4">
+                    <div className="absolute inset-0 flex items-center">
+                      <Separator className="w-full" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                    </div>
+                  </div>
+                  
+                  <GoogleAuthButton mode="signup" isLoading={isLoading} />
                 </form>
               </TabsContent>
             </Tabs>
