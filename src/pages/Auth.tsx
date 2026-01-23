@@ -10,10 +10,10 @@ import { Mail, Lock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { PasswordStrengthIndicator, validatePasswordStrength } from '@/components/auth/PasswordStrengthIndicator';
 import idcraftLogo from '@/assets/idcraft-logo.jpeg';
 
 const emailSchema = z.string().email('Please enter a valid email address');
-const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -21,6 +21,7 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [activeTab, setActiveTab] = useState('login');
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -48,11 +49,15 @@ const Auth = () => {
       }
     }
 
-    try {
-      passwordSchema.parse(password);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        toast.error(error.errors[0].message);
+    if (isSignUp) {
+      const strengthResult = validatePasswordStrength(password);
+      if (!strengthResult.isValid) {
+        toast.error(strengthResult.message);
+        return false;
+      }
+    } else {
+      if (password.length < 6) {
+        toast.error('Password must be at least 6 characters');
         return false;
       }
     }
@@ -63,6 +68,20 @@ const Auth = () => {
     }
 
     return true;
+  };
+
+  const sendLockoutNotification = async (attemptType: 'login' | 'signup', lockoutMinutes: number) => {
+    try {
+      await supabase.functions.invoke('send-lockout-notification', {
+        body: {
+          email: email.toLowerCase(),
+          attemptType,
+          lockoutMinutes
+        }
+      });
+    } catch (error) {
+      console.error('Failed to send lockout notification:', error);
+    }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -85,6 +104,8 @@ const Auth = () => {
 
       if (isAllowed === false) {
         toast.error('Too many login attempts. Please try again in 15 minutes.');
+        // Send lockout notification
+        await sendLockoutNotification('login', 15);
         setIsLoading(false);
         return;
       }
@@ -137,6 +158,8 @@ const Auth = () => {
 
       if (isAllowed === false) {
         toast.error('Too many signup attempts. Please try again in 1 hour.');
+        // Send lockout notification
+        await sendLockoutNotification('signup', 60);
         setIsLoading(false);
         return;
       }
@@ -193,7 +216,7 @@ const Auth = () => {
             <CardDescription>Sign in to your account or create a new one</CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="login" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="login">Login</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -271,6 +294,7 @@ const Auth = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                     />
+                    <PasswordStrengthIndicator password={password} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirm-password" className="flex items-center gap-2">
