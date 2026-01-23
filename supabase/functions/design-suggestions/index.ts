@@ -1,9 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const allowedCategories = ['school', 'college', 'corporate', 'event', 'custom'];
+const MAX_INSTITUTION_NAME_LENGTH = 200;
+
+function getSafeErrorMessage(error: unknown): string {
+  return 'An error occurred processing your request';
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,14 +19,50 @@ serve(async (req) => {
   }
 
   try {
+    // Validate authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { category, institutionName, currentColors } = await req.json();
+
+    // Validate category
+    const validCategory = allowedCategories.includes(category) ? category : 'custom';
+    
+    // Validate and sanitize institution name
+    const sanitizedInstitutionName = institutionName 
+      ? String(institutionName).slice(0, MAX_INSTITUTION_NAME_LENGTH).trim()
+      : '';
     
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+      console.error('LOVABLE_API_KEY is not configured');
+      return new Response(JSON.stringify({ error: 'Service temporarily unavailable' }), {
+        status: 503,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    console.log('Generating design suggestions for:', category, institutionName);
+    console.log('Generating design suggestions for user:', claimsData.claims.sub, 'category:', validCategory);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -35,7 +79,7 @@ serve(async (req) => {
           },
           {
             role: "user",
-            content: `I'm designing an ID card for a ${category} institution${institutionName ? ` called "${institutionName}"` : ''}. 
+            content: `I'm designing an ID card for a ${validCategory} institution${sanitizedInstitutionName ? ` called "${sanitizedInstitutionName}"` : ''}. 
             
 Current header color: ${currentColors?.headerColor || 'not set'}
 Current footer color: ${currentColors?.footerColor || 'not set'}
@@ -118,7 +162,10 @@ Provide 3 different color theme options.`
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      throw new Error(`AI gateway error: ${response.status}`);
+      return new Response(JSON.stringify({ error: 'Processing failed, please try again' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const data = await response.json();
@@ -157,7 +204,7 @@ Provide 3 different color theme options.`
   } catch (error) {
     console.error('Error generating design suggestions:', error);
     return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'Failed to generate suggestions' 
+      error: getSafeErrorMessage(error)
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

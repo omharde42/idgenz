@@ -1,9 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const allowedCategories = ['school', 'college', 'corporate', 'event', 'custom'];
+
+function getSafeErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    if (error.message.includes('No image provided')) return 'Image is required';
+  }
+  return 'An error occurred processing your request';
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,18 +21,52 @@ serve(async (req) => {
   }
 
   try {
+    // Validate authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { imageBase64, category } = await req.json();
     
     if (!imageBase64) {
-      throw new Error('No image provided');
+      return new Response(JSON.stringify({ error: 'Image is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
+
+    // Validate category
+    const validCategory = allowedCategories.includes(category) ? category : 'custom';
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+      console.error('LOVABLE_API_KEY is not configured');
+      return new Response(JSON.stringify({ error: 'Service temporarily unavailable' }), {
+        status: 503,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    console.log('Extracting data from ID card image for category:', category);
+    console.log('Extracting data from ID card image for user:', claimsData.claims.sub, 'category:', validCategory);
 
     const fieldPrompts: Record<string, string> = {
       school: 'name, rollNo (roll number), class (class/section), grNo (GR/admission number), dob (date of birth in YYYY-MM-DD format), bloodGroup, phone, address, academicYear',
@@ -32,7 +76,7 @@ serve(async (req) => {
       custom: 'name, idNumber, designation, department, dob, bloodGroup, phone, address'
     };
 
-    const fieldsToExtract = fieldPrompts[category] || fieldPrompts.custom;
+    const fieldsToExtract = fieldPrompts[validCategory] || fieldPrompts.custom;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -127,7 +171,10 @@ Important: Return ONLY the JSON object, no markdown formatting, no code blocks, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      throw new Error(`AI gateway error: ${response.status}`);
+      return new Response(JSON.stringify({ error: 'Processing failed, please try again' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const data = await response.json();
@@ -170,7 +217,7 @@ Important: Return ONLY the JSON object, no markdown formatting, no code blocks, 
   } catch (error) {
     console.error('Error extracting ID data:', error);
     return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'Failed to extract ID data' 
+      error: getSafeErrorMessage(error)
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
