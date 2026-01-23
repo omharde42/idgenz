@@ -16,7 +16,8 @@ interface IDCardData {
   category: string;
   issuedBy: string;
   validFrom: string;
-  [key: string]: string;
+  profilePhoto?: string;
+  [key: string]: string | undefined;
 }
 
 const Verify = () => {
@@ -59,7 +60,7 @@ const Verify = () => {
     }
   };
 
-  const excludedKeys = ['cardType', 'institution', 'institutionAddress', 'category', 'issuedBy', 'validFrom', 'address', 'emergencyContact'];
+  const excludedKeys = ['cardType', 'institution', 'institutionAddress', 'category', 'issuedBy', 'validFrom', 'address', 'emergencyContact', 'profilePhoto'];
 
   if (error) {
     return (
@@ -162,12 +163,26 @@ const Verify = () => {
             <CardContent className="p-6">
               {/* Person Info */}
               <div className="flex items-center gap-4 mb-6 pb-4 border-b border-border">
-                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-                  <User className="w-8 h-8 text-muted-foreground" />
+                <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-primary/20">
+                  {cardData.profilePhoto ? (
+                    <img 
+                      src={cardData.profilePhoto} 
+                      alt="Profile" 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-10 h-10 text-muted-foreground" />
+                  )}
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-foreground">{cardData.Name || 'N/A'}</h3>
+                  <h3 className="text-xl font-bold text-foreground">{cardData.Name || cardData['Student Name'] || cardData['Employee Name'] || 'N/A'}</h3>
                   <p className="text-sm text-muted-foreground">{cardData.cardType}</p>
+                  {cardData.profilePhoto && (
+                    <span className="inline-flex items-center gap-1 text-xs text-green-600 mt-1">
+                      <CheckCircle className="w-3 h-3" />
+                      Photo Verified
+                    </span>
+                  )}
                 </div>
               </div>
 
