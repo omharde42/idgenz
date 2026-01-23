@@ -42,6 +42,7 @@ interface SavedCardsProps {
 
 const SavedCards: React.FC<SavedCardsProps> = ({ userId, refreshTrigger, onLoadCard }) => {
   const [cards, setCards] = useState<SavedCard[]>([]);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,6 +67,36 @@ const SavedCards: React.FC<SavedCardsProps> = ({ userId, refreshTrigger, onLoadC
     });
   }, [cards, searchQuery]);
 
+  // Refresh signed URLs for cards
+  const refreshSignedUrls = async (cardsList: SavedCard[]) => {
+    const urlsMap: Record<string, string> = {};
+    
+    for (const card of cardsList) {
+      try {
+        const urlParts = card.image_url.split('/id-cards/');
+        if (urlParts.length > 1) {
+          const filePath = urlParts[1].split('?')[0]; // Remove existing query params
+          const { data, error } = await supabase
+            .storage
+            .from('id-cards')
+            .createSignedUrl(filePath, 3600); // 1 hour
+          
+          if (!error && data) {
+            urlsMap[card.id] = data.signedUrl;
+          } else {
+            urlsMap[card.id] = card.image_url; // Fallback to stored URL
+          }
+        } else {
+          urlsMap[card.id] = card.image_url;
+        }
+      } catch {
+        urlsMap[card.id] = card.image_url;
+      }
+    }
+    
+    setSignedUrls(urlsMap);
+  };
+
   const fetchCards = async () => {
     try {
       const { data, error } = await supabase
@@ -75,10 +106,14 @@ const SavedCards: React.FC<SavedCardsProps> = ({ userId, refreshTrigger, onLoadC
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setCards((data || []).map(card => ({
+      const cardsList = (data || []).map(card => ({
         ...card,
         config: card.config as unknown as IDCardConfig
-      })));
+      }));
+      setCards(cardsList);
+      
+      // Refresh signed URLs for all cards
+      await refreshSignedUrls(cardsList);
     } catch (error) {
       console.error('Error fetching saved cards:', error);
     } finally {
@@ -253,7 +288,24 @@ const SavedCards: React.FC<SavedCardsProps> = ({ userId, refreshTrigger, onLoadC
 
   const handleDownload = async (card: SavedCard) => {
     try {
-      const response = await fetch(card.image_url);
+      // For signed URLs or expired URLs, get a fresh signed URL
+      const urlParts = card.image_url.split('/id-cards/');
+      let downloadUrl = card.image_url;
+      
+      if (urlParts.length > 1) {
+        // Extract file path and get a fresh signed URL
+        const filePath = urlParts[1].split('?')[0]; // Remove any existing query params
+        const { data: signedUrlData, error: signedUrlError } = await supabase
+          .storage
+          .from('id-cards')
+          .createSignedUrl(filePath, 3600); // 1 hour for download
+        
+        if (!signedUrlError && signedUrlData) {
+          downloadUrl = signedUrlData.signedUrl;
+        }
+      }
+      
+      const response = await fetch(downloadUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -339,7 +391,7 @@ const SavedCards: React.FC<SavedCardsProps> = ({ userId, refreshTrigger, onLoadC
           <CardContent className="p-2">
             <div className="relative aspect-[3/4] bg-muted rounded overflow-hidden mb-2">
               <img
-                src={card.image_url}
+                src={signedUrls[card.id] || card.image_url}
                 alt={card.name}
                 className="w-full h-full object-contain"
               />
