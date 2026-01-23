@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback } from 'react';
-import { Upload, User, Building, PenTool, Image, X, AlertCircle, Crop, GripVertical } from 'lucide-react';
+import { Upload, User, Building, PenTool, Image, X, AlertCircle, Crop, GripVertical, Cloud, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import PhotoEnhancer from './PhotoEnhancer';
 import ImageCropper from './ImageCropper';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useCloudPhotoUpload, base64ToBlob } from '@/hooks/useCloudPhotoUpload';
 
 interface ImageUploadsProps {
   config: IDCardConfig;
@@ -28,6 +29,9 @@ const ImageUploads: React.FC<ImageUploadsProps> = ({ config, onChange }) => {
   const [cropperOpen, setCropperOpen] = useState(false);
   const [cropperImage, setCropperImage] = useState<string>('');
   const [cropperField, setCropperField] = useState<ImageField>('profilePhoto');
+  const [uploadingField, setUploadingField] = useState<ImageField | null>(null);
+
+  const { uploadPhoto, uploading } = useCloudPhotoUpload();
 
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return bytes + ' B';
@@ -44,7 +48,15 @@ const ImageUploads: React.FC<ImageUploadsProps> = ({ config, onChange }) => {
     }
   };
 
-  const processFile = useCallback((file: File, field: ImageField, shouldCrop: boolean = false) => {
+  // Upload to cloud storage and return public URL
+  const uploadToCloud = useCallback(async (file: File | Blob, field: ImageField): Promise<string | null> => {
+    setUploadingField(field);
+    const url = await uploadPhoto(file);
+    setUploadingField(null);
+    return url;
+  }, [uploadPhoto]);
+
+  const processFile = useCallback(async (file: File, field: ImageField, shouldCrop: boolean = false) => {
     if (file.size > MAX_FILE_SIZE) {
       toast.error(`File too large! Maximum size is 2MB. Your file: ${formatFileSize(file.size)}`);
       return;
@@ -55,22 +67,24 @@ const ImageUploads: React.FC<ImageUploadsProps> = ({ config, onChange }) => {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const imageUrl = reader.result as string;
-      
-      // Only offer cropping for profile photo
-      if (field === 'profilePhoto' && shouldCrop) {
-        setCropperImage(imageUrl);
+    // For profile photos with cropping, first show cropper
+    if (field === 'profilePhoto' && shouldCrop) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCropperImage(reader.result as string);
         setCropperField(field);
         setCropperOpen(true);
-      } else {
-        onChange({ [field]: imageUrl });
-        toast.success(`${getFieldLabel(field)} uploaded successfully!`);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      // Upload directly to cloud storage
+      const cloudUrl = await uploadToCloud(file, field);
+      if (cloudUrl) {
+        onChange({ [field]: cloudUrl });
+        toast.success(`${getFieldLabel(field)} uploaded to cloud!`);
       }
-    };
-    reader.readAsDataURL(file);
-  }, [onChange]);
+    }
+  }, [onChange, uploadToCloud]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, field: ImageField) => {
     const file = e.target.files?.[0];
@@ -103,10 +117,15 @@ const ImageUploads: React.FC<ImageUploadsProps> = ({ config, onChange }) => {
     }
   }, [processFile]);
 
-  const handleCropComplete = (croppedImageUrl: string) => {
-    onChange({ [cropperField]: croppedImageUrl });
-    toast.success(`${getFieldLabel(cropperField)} cropped and uploaded successfully!`);
-  };
+  const handleCropComplete = useCallback(async (croppedImageUrl: string) => {
+    // Convert cropped base64 to blob and upload to cloud
+    const blob = base64ToBlob(croppedImageUrl);
+    const cloudUrl = await uploadToCloud(blob, cropperField);
+    if (cloudUrl) {
+      onChange({ [cropperField]: cloudUrl });
+      toast.success(`${getFieldLabel(cropperField)} cropped and uploaded to cloud!`);
+    }
+  }, [cropperField, onChange, uploadToCloud]);
 
   const openCropper = (field: ImageField, imageUrl: string) => {
     setCropperImage(imageUrl);
@@ -208,15 +227,16 @@ const ImageUploads: React.FC<ImageUploadsProps> = ({ config, onChange }) => {
       {/* Image Upload Section */}
       <div className="space-y-3">
         <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
-          <Upload className="w-4 h-4" />
+          <Cloud className="w-4 h-4" />
           Upload Images
+          <span className="text-xs font-normal text-muted-foreground">(Cloud Storage)</span>
         </h3>
         
-        {/* File Size Notice */}
-        <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg border border-border/50">
-          <AlertCircle className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+        {/* Cloud Storage Notice */}
+        <div className="flex items-center gap-2 p-2 bg-primary/5 rounded-lg border border-primary/20">
+          <Cloud className="w-4 h-4 text-primary flex-shrink-0" />
           <p className="text-xs text-muted-foreground">
-            Max file size: <span className="font-medium text-foreground">2MB</span> • Drag & drop supported
+            Photos are uploaded to cloud storage for <span className="font-medium text-foreground">QR code compatibility</span>
           </p>
         </div>
 
@@ -232,7 +252,13 @@ const ImageUploads: React.FC<ImageUploadsProps> = ({ config, onChange }) => {
                 className="hidden"
               />
               
-              {value ? (
+              {uploadingField === key ? (
+                // Loading State
+                <div className="w-full h-28 border-2 border-primary/50 rounded-lg flex flex-col items-center justify-center gap-2 bg-primary/5">
+                  <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                  <p className="text-xs text-primary font-medium">Uploading to cloud...</p>
+                </div>
+              ) : value ? (
                 // Image Preview State
                 <div className="relative border-2 border-primary/30 rounded-lg overflow-hidden bg-muted/30">
                   <img 
@@ -240,6 +266,12 @@ const ImageUploads: React.FC<ImageUploadsProps> = ({ config, onChange }) => {
                     alt={label} 
                     className="w-full h-24 object-contain p-2"
                   />
+                  {/* Cloud indicator */}
+                  {value.startsWith('http') && (
+                    <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full p-1" title="Stored in cloud">
+                      <Cloud className="w-3 h-3" />
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
                     {canCrop && (
                       <Button
