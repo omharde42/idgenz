@@ -71,9 +71,34 @@ const Auth = () => {
 
     setIsLoading(true);
     try {
+      // Check rate limit before attempting login
+      const { data: isAllowed, error: rateLimitError } = await supabase.rpc('check_rate_limit', {
+        p_identifier: email.toLowerCase(),
+        p_attempt_type: 'login',
+        p_max_attempts: 5,
+        p_window_minutes: 15
+      });
+
+      if (rateLimitError) {
+        console.error('Rate limit check error:', rateLimitError);
+      }
+
+      if (isAllowed === false) {
+        toast.error('Too many login attempts. Please try again in 15 minutes.');
+        setIsLoading(false);
+        return;
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
+      });
+
+      // Record the attempt
+      await supabase.rpc('record_auth_attempt', {
+        p_identifier: email.toLowerCase(),
+        p_attempt_type: 'login',
+        p_success: !error
       });
 
       if (error) {
@@ -98,6 +123,24 @@ const Auth = () => {
 
     setIsLoading(true);
     try {
+      // Check rate limit before attempting signup
+      const { data: isAllowed, error: rateLimitError } = await supabase.rpc('check_rate_limit', {
+        p_identifier: email.toLowerCase(),
+        p_attempt_type: 'signup',
+        p_max_attempts: 3,
+        p_window_minutes: 60
+      });
+
+      if (rateLimitError) {
+        console.error('Rate limit check error:', rateLimitError);
+      }
+
+      if (isAllowed === false) {
+        toast.error('Too many signup attempts. Please try again in 1 hour.');
+        setIsLoading(false);
+        return;
+      }
+
       const redirectUrl = `${window.location.origin}/`;
       
       const { error } = await supabase.auth.signUp({
@@ -106,6 +149,13 @@ const Auth = () => {
         options: {
           emailRedirectTo: redirectUrl,
         },
+      });
+
+      // Record the attempt
+      await supabase.rpc('record_auth_attempt', {
+        p_identifier: email.toLowerCase(),
+        p_attempt_type: 'signup',
+        p_success: !error
       });
 
       if (error) {
