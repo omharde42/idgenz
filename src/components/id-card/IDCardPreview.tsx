@@ -66,7 +66,7 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
         {/* Header */}
         <div
           className={`
-            flex items-center justify-center gap-3 p-4
+            flex items-center justify-center gap-2 p-3
             ${isVertical ? 'w-full' : 'w-2/5 flex-col'}
           `}
           style={{ backgroundColor: config.headerColor }}
@@ -75,14 +75,14 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
             <img
               src={config.institutionLogo}
               alt="Logo"
-              className={`${isVertical ? 'h-8' : 'h-12'} object-contain`}
+              className={`${isVertical ? 'h-8' : 'h-10'} object-contain flex-shrink-0`}
             />
           )}
-          <div className={`text-center ${isVertical ? '' : 'mt-2'}`}>
-            <h3 className="font-bold text-sm uppercase text-primary-foreground">
+          <div className={`text-center ${isVertical ? '' : 'mt-1'} flex-shrink-0 px-1`}>
+            <h3 className="font-bold text-xs uppercase text-primary-foreground leading-tight">
               {config.institutionName || 'Institution Name'}
             </h3>
-            <p className="text-xs text-primary-foreground/80">
+            <p className="text-[9px] text-primary-foreground/80 leading-tight">
               {config.institutionAddress || 'Address'}
             </p>
           </div>
@@ -91,7 +91,7 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
             <>
               {/* Photo for horizontal layout */}
               <div
-                className="rounded-full overflow-hidden border-4 border-primary-foreground/30 mt-4 relative flex-shrink-0"
+                className="rounded-full overflow-hidden border-3 border-primary-foreground/30 mt-2 relative flex-shrink-0"
                 style={{ 
                   width: `${config.photoSize}px`, 
                   height: `${config.photoSize}px`,
@@ -117,7 +117,7 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
                   </div>
                 )}
               </div>
-              <h2 className="text-sm font-bold text-primary-foreground text-center mt-2">
+              <h2 className="text-xs font-bold text-primary-foreground text-center mt-1 leading-tight px-1 break-words max-w-full">
                 {config.fields.find((f) => f.key === 'name')?.value || 'Full Name'}
               </h2>
             </>
