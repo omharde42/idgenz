@@ -21,12 +21,20 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
     const addressField = config.fields.find(f => f.key === 'address');
     const emergencyContactField = config.fields.find(f => f.key === 'emergencyContact');
     
+    // Check if photo is a URL (cloud storage) or base64 (local upload)
+    const isPhotoUrl = config.profilePhoto && (
+      config.profilePhoto.startsWith('http://') || 
+      config.profilePhoto.startsWith('https://')
+    );
+    
     // Generate comprehensive QR code data with ALL user details for scanning
     const qrDataObject = {
       cardType: 'ID Card',
       institution: config.institutionName || 'Institution',
       institutionAddress: config.institutionAddress || '',
       category: config.category,
+      // Include profile photo URL if it's a cloud URL (not base64)
+      profilePhoto: isPhotoUrl ? config.profilePhoto : '',
       // Include ALL enabled fields with their labels
       ...enabledFields.reduce((acc, field) => {
         acc[field.label] = field.value || '';
@@ -39,23 +47,33 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
       validFrom: new Date().toISOString().split('T')[0],
     };
     
+    // Get name for display
+    const studentName = config.fields.find(f => f.key === 'name')?.value || 'Student';
+    
     // Create human-readable text for external QR scanner apps
     const readableQRContent = [
-      `📋 ${config.institutionName || 'Institution'} - ID CARD`,
+      `📋 ${config.institutionName || 'Institution'}`,
       `━━━━━━━━━━━━━━━━━━━━━`,
+      `📛 ID CARD - ${studentName}`,
       config.institutionAddress ? `📍 ${config.institutionAddress}` : '',
       ``,
-      ...enabledFields.map(field => `${field.label}: ${field.value || 'N/A'}`),
-      addressField?.value ? `Address: ${addressField.value}` : '',
-      emergencyContactField?.value ? `Emergency Contact: ${emergencyContactField.value}` : '',
+      // Photo status
+      config.profilePhoto 
+        ? (isPhotoUrl ? `📸 Photo: ${config.profilePhoto}` : `📸 Photo: Attached (Local)`)
+        : `📸 Photo: Not attached`,
+      ``,
+      `👤 PERSONAL DETAILS:`,
+      ...enabledFields.map(field => `• ${field.label}: ${field.value || 'N/A'}`),
+      addressField?.value ? `• Address: ${addressField.value}` : '',
+      emergencyContactField?.value ? `• Emergency Contact: ${emergencyContactField.value}` : '',
       ``,
       `━━━━━━━━━━━━━━━━━━━━━`,
-      `Issued by: ${config.signatoryTitle}`,
-      `Category: ${config.category}`,
-      `Valid from: ${new Date().toISOString().split('T')[0]}`,
+      `📝 Issued by: ${config.signatoryTitle}`,
+      `🏷️ Category: ${config.category}`,
+      `📅 Valid from: ${new Date().toISOString().split('T')[0]}`,
       ``,
       `✅ Verified by IDCRAFT`,
-      `🔗 ${window.location.origin}/verify?data=${btoa(encodeURIComponent(JSON.stringify(qrDataObject)))}`
+      `🔗 Verify online: ${window.location.origin}/verify?data=${btoa(encodeURIComponent(JSON.stringify(qrDataObject)))}`
     ].filter(line => line !== '').join('\n');
 
     const cardClasses = `
