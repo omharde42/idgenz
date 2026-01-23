@@ -91,8 +91,13 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
             <>
               {/* Photo for horizontal layout */}
               <div
-                className="rounded-full overflow-hidden border-4 border-primary-foreground/30 mt-4 relative"
-                style={{ width: config.photoSize, height: config.photoSize }}
+                className="rounded-full overflow-hidden border-4 border-primary-foreground/30 mt-4 relative flex-shrink-0"
+                style={{ 
+                  width: `${config.photoSize}px`, 
+                  height: `${config.photoSize}px`,
+                  minWidth: `${config.photoSize}px`,
+                  minHeight: `${config.photoSize}px`
+                }}
               >
                 {config.profilePhoto ? (
                   <>
@@ -100,6 +105,7 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
                       src={config.profilePhoto}
                       alt="Profile"
                       className="w-full h-full object-cover"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                     <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-0.5">
                       <CheckCircle className="w-3 h-3 text-white" />
@@ -133,13 +139,19 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
               {/* Photo */}
               <div
                 className="rounded-full overflow-hidden border-3 border-primary/30 mb-1 flex-shrink-0 relative"
-                style={{ width: Math.min(config.photoSize, 60), height: Math.min(config.photoSize, 60) }}
+                style={{ 
+                  width: `${config.photoSize}px`, 
+                  height: `${config.photoSize}px`,
+                  minWidth: `${config.photoSize}px`,
+                  minHeight: `${config.photoSize}px`
+                }}
               >
                 {config.profilePhoto ? (
                   <img
                     src={config.profilePhoto}
                     alt="Profile"
                     className="w-full h-full object-cover"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                 ) : (
                   <div className="w-full h-full bg-muted flex items-center justify-center">
