@@ -39,9 +39,24 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
       validFrom: new Date().toISOString().split('T')[0],
     };
     
-    // Create verification URL with encoded data
-    const encodedData = btoa(encodeURIComponent(JSON.stringify(qrDataObject)));
-    const verifyUrl = `${window.location.origin}/verify?data=${encodedData}`;
+    // Create human-readable text for external QR scanner apps
+    const readableQRContent = [
+      `📋 ${config.institutionName || 'Institution'} - ID CARD`,
+      `━━━━━━━━━━━━━━━━━━━━━`,
+      config.institutionAddress ? `📍 ${config.institutionAddress}` : '',
+      ``,
+      ...enabledFields.map(field => `${field.label}: ${field.value || 'N/A'}`),
+      addressField?.value ? `Address: ${addressField.value}` : '',
+      emergencyContactField?.value ? `Emergency Contact: ${emergencyContactField.value}` : '',
+      ``,
+      `━━━━━━━━━━━━━━━━━━━━━`,
+      `Issued by: ${config.signatoryTitle}`,
+      `Category: ${config.category}`,
+      `Valid from: ${new Date().toISOString().split('T')[0]}`,
+      ``,
+      `✅ Verified by IDCRAFT`,
+      `🔗 ${window.location.origin}/verify?data=${btoa(encodeURIComponent(JSON.stringify(qrDataObject)))}`
+    ].filter(line => line !== '').join('\n');
 
     const cardClasses = `
       ${config.cardShape === 'rounded' ? 'rounded-xl' : 'rounded-none'}
@@ -193,7 +208,7 @@ const IDCardPreview = forwardRef<HTMLDivElement, IDCardPreviewProps>(
             {config.showQRCode && (
               <div className="bg-white p-1 rounded shadow-sm flex-shrink-0" title="Scan to view all details">
                 <QRCodeSVG 
-                  value={verifyUrl} 
+                  value={readableQRContent} 
                   size={isVertical ? 36 : 40} 
                   level="L"
                   includeMargin={false}
